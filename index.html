@@ -7,6 +7,7 @@
     <!-- Tailwind CSS for modern responsive overlay screens -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
     <style>
         body {
             margin: 0;
@@ -157,6 +158,13 @@
 </head>
 <body class="relative w-screen h-screen overflow-hidden">
 
+
+    <!-- Local session count only; a shared backend is required for global player counts. -->
+    <aside id="playerCountIndicator" class="player-count-indicator" role="status" aria-live="polite" aria-label="Open game tabs in this browser">
+        <span class="player-count-dot" aria-hidden="true"></span>
+        <span><strong id="playerCountValue">1</strong> <span id="playerCountLabel">OPEN GAME TAB</span></span>
+        <small>THIS BROWSER ONLY</small>
+    </aside>
 
     <!-- 3D WebGL Canvas -->
     <div id="canvasContainer" class="absolute inset-0"></div>
@@ -456,6 +464,46 @@
 
 
     <script>
+        // Counts open copies of this game in localStorage for this browser/origin only.
+        (() => {
+            const key = 'xcShooterActiveTabsV1';
+            const sessionId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            const value = document.getElementById('playerCountValue');
+            const label = document.getElementById('playerCountLabel');
+            const staleAfter = 15000;
+
+            function updateLocalTabCount() {
+                try {
+                    const now = Date.now();
+                    const sessions = JSON.parse(localStorage.getItem(key) || '{}');
+                    Object.keys(sessions).forEach(id => {
+                        if (!Number.isFinite(sessions[id]) || now - sessions[id] > staleAfter) delete sessions[id];
+                    });
+                    sessions[sessionId] = now;
+                    localStorage.setItem(key, JSON.stringify(sessions));
+                    const count = Object.keys(sessions).length;
+                    value.textContent = count;
+                    label.textContent = count === 1 ? 'OPEN GAME TAB' : 'OPEN GAME TABS';
+                } catch (error) {
+                    value.textContent = '—';
+                    label.textContent = 'COUNT UNAVAILABLE';
+                }
+            }
+
+            updateLocalTabCount();
+            window.setInterval(updateLocalTabCount, 5000);
+            window.addEventListener('storage', event => {
+                if (event.key === key) updateLocalTabCount();
+            });
+            window.addEventListener('pagehide', () => {
+                try {
+                    const sessions = JSON.parse(localStorage.getItem(key) || '{}');
+                    delete sessions[sessionId];
+                    localStorage.setItem(key, JSON.stringify(sessions));
+                } catch (error) { /* Expired heartbeat entries are cleaned up automatically. */ }
+            });
+        })();
+
         // --- GAME & THREE.JS SETUP ---
         let scene, camera, renderer;
         let gameState = 'START'; // START, PLAYING, PAUSED, MENU, GAMEOVER
