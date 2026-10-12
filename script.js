@@ -100,13 +100,17 @@
     }
 })();
 
-// Provide separate, platform-specific PWA installation guidance.
+// Provide separate, platform-specific PWA installation guidance on both account and phone menus.
 (() => {
-    const androidButton = document.getElementById('installAndroidButton');
-    const iosButton = document.getElementById('installIOSButton');
-    const feedback = document.getElementById('installAppFeedback');
-    if (!androidButton || !iosButton || !feedback) return;
+    const androidButtons = ['installAndroidButton', 'platformInstallAndroidButton']
+        .map(id => document.getElementById(id)).filter(Boolean);
+    const iosButtons = ['installIOSButton', 'platformInstallIOSButton']
+        .map(id => document.getElementById(id)).filter(Boolean);
+    const feedbackElements = ['installAppFeedback', 'platformInstallAppFeedback']
+        .map(id => document.getElementById(id)).filter(Boolean);
+    if (!androidButtons.length || !iosButtons.length || !feedbackElements.length) return;
 
+    const showFeedback = message => feedbackElements.forEach(element => { element.textContent = message; });
     let installPrompt = null;
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -118,9 +122,9 @@
         installPrompt = event;
     });
 
-    androidButton.addEventListener('click', async () => {
+    androidButtons.forEach(button => button.addEventListener('click', async () => {
         if (isStandalone) {
-            feedback.textContent = 'XC Shooter is already installed. Launch it from your Home Screen or app list.';
+            showFeedback('XC Shooter is already installed. Launch it from your Home Screen or app list.');
             return;
         }
 
@@ -128,38 +132,38 @@
             try {
                 installPrompt.prompt();
                 const choice = await installPrompt.userChoice;
-                feedback.textContent = choice.outcome === 'accepted'
+                showFeedback(choice.outcome === 'accepted'
                     ? 'Install started. Find XC Shooter on your Home Screen or in your app list.'
-                    : 'Install cancelled. You can try again whenever you like.';
+                    : 'Install cancelled. You can try again whenever you like.');
             } catch (error) {
-                feedback.textContent = 'Open this game in Chrome or another supported Android browser, then use its menu to install the app.';
+                showFeedback('Open this game in Chrome or another supported Android browser, then use its menu to install the app.');
             } finally {
                 installPrompt = null;
             }
             return;
         }
 
-        feedback.textContent = 'Android: open this page in Chrome, tap ⋮, then choose Install app or Add to Home screen. Secure HTTPS hosting is required.';
-    });
+        showFeedback('Android: open this page in Chrome, tap ⋮, then choose Install app or Add to Home screen. Secure HTTPS hosting is required.');
+    }));
 
-    iosButton.addEventListener('click', () => {
-        if (isIOS && isStandalone) {
-            feedback.textContent = 'XC Shooter is already installed. Launch it from your Home Screen.';
-        } else {
-            feedback.textContent = 'iPhone/iPad: open this page in Safari, tap Share, then Add to Home Screen. Secure HTTPS hosting is required.';
-        }
-    });
+    iosButtons.forEach(button => button.addEventListener('click', () => {
+        showFeedback(isIOS && isStandalone
+            ? 'XC Shooter is already installed. Launch it from your Home Screen.'
+            : 'iPhone/iPad: open this page in Safari, tap Share, then Add to Home Screen. Secure HTTPS hosting is required.');
+    }));
 
     window.addEventListener('appinstalled', () => {
-        feedback.textContent = 'XC Shooter was installed. Find it on your Home Screen or in your app list.';
-        androidButton.textContent = 'ANDROID APP INSTALLED';
-        androidButton.disabled = true;
+        showFeedback('XC Shooter was installed. Find it on your Home Screen or in your app list.');
+        androidButtons.forEach(button => {
+            button.textContent = 'ANDROID APP INSTALLED';
+            button.disabled = true;
+        });
     });
 
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./service-worker.js').catch(() => {
-                feedback.textContent = 'Installation needs secure HTTPS hosting. Please check this site connection.';
+                showFeedback('Installation needs secure HTTPS hosting. Please check this site connection.');
             });
         }, { once: true });
     }
@@ -190,6 +194,12 @@
     let originalSpeed = null;
     let lastBoosted = new WeakSet();
     let savedAtmosphere = null;
+    const BIOMES = [
+        { name: 'PINE FOREST', x: -112, z: -112, color: '#315844', edge: '#8bd69c', kind: 'forest' },
+        { name: 'RED DUNES', x: 112, z: -112, color: '#a86e3d', edge: '#ffd08a', kind: 'desert' },
+        { name: 'MIST MARSH', x: -112, z: 112, color: '#315c55', edge: '#8ce0c2', kind: 'marsh' },
+        { name: 'FROST RIDGE', x: 112, z: 112, color: '#70899a', edge: '#d9f4ff', kind: 'frost' }
+    ];
 
     const ui = document.createElement('section');
     ui.hidden = true;
@@ -348,6 +358,83 @@
         cityGroup.visible = false;
     }
 
+    function buildBiomes() {
+        const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x55402c, roughness: 1 });
+        const pineMaterial = new THREE.MeshStandardMaterial({ color: 0x174b37, roughness: 0.95 });
+        const pineTipMaterial = new THREE.MeshStandardMaterial({ color: 0x2d7650, roughness: 0.9 });
+        const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x75634f, roughness: 1 });
+        const cactusMaterial = new THREE.MeshStandardMaterial({ color: 0x3f7c4b, roughness: 0.95 });
+        const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x1e6470, roughness: 0.3, metalness: 0.15 });
+        const reedMaterial = new THREE.MeshStandardMaterial({ color: 0x80934b, roughness: 1 });
+        const snowMaterial = new THREE.MeshStandardMaterial({ color: 0xe0f4fa, roughness: 0.95 });
+
+        BIOMES.forEach((biome, biomeIndex) => {
+            const patch = new THREE.Mesh(
+                new THREE.PlaneGeometry(92, 92),
+                new THREE.MeshStandardMaterial({ color: biome.color, roughness: 1, transparent: true, opacity: 0.83 })
+            );
+            patch.rotation.x = -Math.PI / 2;
+            patch.position.set(biome.x, 0.035, biome.z);
+            scene.add(patch);
+
+            for (let i = 0; i < 13; i++) {
+                const localX = ((i * 29 + biomeIndex * 13) % 76) - 38;
+                const localZ = ((i * 41 + biomeIndex * 19) % 76) - 38;
+                const x = biome.x + localX;
+                const z = biome.z + localZ;
+                const prop = new THREE.Group();
+                prop.position.set(x, 0, z);
+
+                if (biome.kind === 'forest') {
+                    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.34, 2.2, 7), trunkMaterial);
+                    trunk.position.y = 1.1;
+                    prop.add(trunk);
+                    for (let tier = 0; tier < 3; tier++) {
+                        const crown = new THREE.Mesh(new THREE.ConeGeometry(1.8 - tier * 0.3, 2.5, 7), tier === 2 ? pineTipMaterial : pineMaterial);
+                        crown.position.y = 2.2 + tier * 1.15;
+                        prop.add(crown);
+                    }
+                } else if (biome.kind === 'desert') {
+                    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.3, 2.3, 7), cactusMaterial);
+                    stem.position.y = 1.15;
+                    prop.add(stem);
+                    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 1.0, 6), cactusMaterial);
+                    arm.position.set(0.42, 1.4, 0);
+                    arm.rotation.z = Math.PI / 2;
+                    prop.add(arm);
+                    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.0, 0), rockMaterial);
+                    rock.position.set(-1.2, 0.45, 0.8);
+                    rock.scale.set(1.4, 0.6, 0.85);
+                    prop.add(rock);
+                } else if (biome.kind === 'marsh') {
+                    if (i % 3 === 0) {
+                        const pool = new THREE.Mesh(new THREE.CircleGeometry(3 + (i % 2), 12), waterMaterial);
+                        pool.rotation.x = -Math.PI / 2;
+                        pool.position.y = 0.06;
+                        prop.add(pool);
+                    }
+                    for (let reedIndex = 0; reedIndex < 3; reedIndex++) {
+                        const reed = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.07, 1.35, 5), reedMaterial);
+                        reed.position.set((reedIndex - 1) * 0.35, 0.67, (reedIndex % 2) * 0.3);
+                        reed.rotation.z = (reedIndex - 1) * 0.12;
+                        prop.add(reed);
+                    }
+                } else {
+                    const boulder = new THREE.Mesh(new THREE.DodecahedronGeometry(1.7, 0), i % 2 ? snowMaterial : rockMaterial);
+                    boulder.position.y = 0.8;
+                    boulder.scale.set(1.2, 0.9 + (i % 3) * 0.25, 1.1);
+                    prop.add(boulder);
+                    if (i % 2 === 0) {
+                        const peak = new THREE.Mesh(new THREE.ConeGeometry(2.3, 4.2, 6), snowMaterial);
+                        peak.position.set(1.8, 2.0, -1.2);
+                        prop.add(peak);
+                    }
+                }
+                scene.add(prop);
+            }
+        });
+    }
+
     function installWorld() {
         if (typeof THREE === 'undefined' || typeof scene === 'undefined' || !scene || typeof player === 'undefined') return;
         if (scene === worldScene) return;
@@ -376,6 +463,7 @@
         }
         PARTS.forEach(addPartMesh);
         buildCity();
+        buildBiomes();
         savedAtmosphere = null;
         lastPlayerPosition = null;
         paintObjective();
@@ -499,50 +587,104 @@
         });
     }
 
-    function drawDetailedMinimap() {
-        const canvas = document.getElementById('minimapCanvas');
-        if (!canvas || typeof player === 'undefined') return;
-        if (canvas.width !== 220 || canvas.height !== 220) {
-            canvas.width = 220;
-            canvas.height = 220;
+    const fullMapScreen = document.getElementById('fullMapScreen');
+    const fullMapCanvas = document.getElementById('fullMapCanvas');
+    const fullMapButton = document.getElementById('fullMapButton');
+    let fullMapOpen = false;
+    let mapReturnState = 'PLAYING';
+
+    function closeFullMap() {
+        if (!fullMapOpen) return;
+        fullMapOpen = false;
+        fullMapScreen.hidden = true;
+        if (typeof gameState !== 'undefined' && gameState === 'MAP') gameState = mapReturnState;
+        fullMapButton.focus();
+    }
+
+    function toggleFullMap(forceOpen) {
+        const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !fullMapOpen;
+        if (shouldOpen === fullMapOpen) return;
+        if (shouldOpen && gameState !== 'PLAYING') return;
+        fullMapOpen = shouldOpen;
+        if (fullMapOpen) {
+            mapReturnState = gameState;
+            gameState = 'MAP';
+            fullMapScreen.hidden = false;
+            document.getElementById('closeFullMapButton').focus();
+        } else {
+            closeFullMap();
         }
+    }
+
+    function drawDetailedMinimap(targetCanvas = document.getElementById('minimapCanvas'), fullMap = false) {
+        const canvas = targetCanvas;
+        if (!canvas || typeof player === 'undefined') return;
+        const size = fullMap ? 800 : 220;
+        if (canvas.width !== size || canvas.height !== size) canvas.width = canvas.height = size;
         const ctx = canvas.getContext('2d');
-        const size = canvas.width;
         const center = size / 2;
-        const viewRadius = inCity ? 68 : 38;
+        const mapCenterX = fullMap ? 150 : player.x;
+        const mapCenterZ = fullMap ? 150 : player.z;
+        const viewRadius = fullMap ? 350 : (inCity ? 68 : 38);
         const scale = size / (viewRadius * 2);
-        const mapX = x => center + (x - player.x) * scale;
-        const mapZ = z => center + (z - player.z) * scale;
+        const mapX = x => center + (x - mapCenterX) * scale;
+        const mapZ = z => center + (z - mapCenterZ) * scale;
 
         ctx.clearRect(0, 0, size, size);
         ctx.save();
         ctx.beginPath();
-        ctx.arc(center, center, center - 2, 0, Math.PI * 2);
+        if (fullMap) ctx.rect(0, 0, size, size);
+        else ctx.arc(center, center, center - 2, 0, Math.PI * 2);
         ctx.clip();
         ctx.fillStyle = inCity ? '#b7dda0' : '#263b38';
         ctx.fillRect(0, 0, size, size);
 
-        const grid = inCity ? 19 : 10;
-        ctx.strokeStyle = inCity ? 'rgba(61, 104, 75, .24)' : 'rgba(148, 163, 184, .18)';
+        BIOMES.forEach(biome => {
+            const left = mapX(biome.x - 46), top = mapZ(biome.z - 46);
+            const zoneSize = 92 * scale;
+            if (left <= size && top <= size && left + zoneSize >= 0 && top + zoneSize >= 0) {
+                ctx.fillStyle = biome.color;
+                ctx.globalAlpha = fullMap ? 0.88 : 0.76;
+                ctx.fillRect(left, top, zoneSize, zoneSize);
+                ctx.globalAlpha = 1;
+                if (fullMap) {
+                    ctx.strokeStyle = biome.edge;
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(left, top, zoneSize, zoneSize);
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.font = 'bold 13px system-ui';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(biome.name, mapX(biome.x), mapZ(biome.z));
+                }
+            }
+        });
+
+        const grid = fullMap ? 50 : (inCity ? 19 : 10);
+        ctx.strokeStyle = fullMap ? 'rgba(226, 232, 240, .16)' : (inCity ? 'rgba(61, 104, 75, .24)' : 'rgba(148, 163, 184, .18)');
         ctx.lineWidth = 1;
-        const firstX = Math.floor((player.x - viewRadius) / grid) * grid;
-        const firstZ = Math.floor((player.z - viewRadius) / grid) * grid;
-        for (let x = firstX; x <= player.x + viewRadius; x += grid) {
+        const firstX = Math.floor((mapCenterX - viewRadius) / grid) * grid;
+        const firstZ = Math.floor((mapCenterZ - viewRadius) / grid) * grid;
+        for (let x = firstX; x <= mapCenterX + viewRadius; x += grid) {
             ctx.beginPath(); ctx.moveTo(mapX(x), 0); ctx.lineTo(mapX(x), size); ctx.stroke();
         }
-        for (let z = firstZ; z <= player.z + viewRadius; z += grid) {
+        for (let z = firstZ; z <= mapCenterZ + viewRadius; z += grid) {
             ctx.beginPath(); ctx.moveTo(0, mapZ(z)); ctx.lineTo(size, mapZ(z)); ctx.stroke();
         }
 
-        if (inCity) {
+        if (inCity || fullMap) {
             ctx.fillStyle = '#485569';
-            ctx.fillRect(mapX(228), 0, 24 * scale, size);
-            ctx.fillRect(0, mapZ(228), size, 24 * scale);
+            if (fullMap) {
+                ctx.fillRect(mapX(228), mapZ(470), 24 * scale, 460 * scale);
+                ctx.fillRect(mapX(10), mapZ(228), 460 * scale, 24 * scale);
+            } else {
+                ctx.fillRect(mapX(228), 0, 24 * scale, size);
+                ctx.fillRect(0, mapZ(228), size, 24 * scale);
+            }
             ctx.strokeStyle = 'rgba(255, 255, 255, .65)';
             ctx.setLineDash([5, 5]);
             ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.moveTo(mapX(240), 0); ctx.lineTo(mapX(240), size); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0, mapZ(240)); ctx.lineTo(size, mapZ(240)); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(mapX(240), fullMap ? mapZ(470) : 0); ctx.lineTo(mapX(240), fullMap ? mapZ(10) : size); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(fullMap ? mapX(10) : 0, mapZ(240)); ctx.lineTo(fullMap ? mapX(470) : size, mapZ(240)); ctx.stroke();
             ctx.setLineDash([]);
             const colors = ['#e9bb80', '#91bfd1', '#d99d9d', '#d0d5df', '#93ad92', '#dfbd58'];
             let building = 0;
@@ -562,7 +704,14 @@
                     ctx.fillRect(left + width * .62, top + height * .62, Math.max(2, width * .12), Math.max(2, height * .12));
                 }
             }
-        } else {
+            if (fullMap) {
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = 'bold 13px system-ui';
+                ctx.textAlign = 'center';
+                ctx.fillText('BRIGHT CITY', mapX(240), mapZ(330));
+            }
+        }
+        if (!inCity || fullMap) {
             const nearbyObstacles = typeof obstacles !== 'undefined' && Array.isArray(obstacles) ? obstacles : [];
             nearbyObstacles.forEach(item => {
                 if (!item || typeof item !== 'object') return;
@@ -571,10 +720,14 @@
                 if (!pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.z)) return;
                 const x = mapX(pos.x), z = mapZ(pos.z);
                 if (x < 0 || x > size || z < 0 || z > size) return;
+                const width = fullMap && object.geometry?.parameters?.width ? Math.max(3, object.geometry.parameters.width * scale) : (fullMap ? 3 : 6);
+                const depth = fullMap && object.geometry?.parameters?.depth ? Math.max(3, object.geometry.parameters.depth * scale) : (fullMap ? 3 : 6);
                 ctx.fillStyle = '#687783';
-                ctx.fillRect(x - 3, z - 3, 6, 6);
-                ctx.strokeStyle = 'rgba(226, 232, 240, .65)';
-                ctx.strokeRect(x - 3, z - 3, 6, 6);
+                ctx.fillRect(x - width / 2, z - depth / 2, width, depth);
+                if (!fullMap) {
+                    ctx.strokeStyle = 'rgba(226, 232, 240, .65)';
+                    ctx.strokeRect(x - width / 2, z - depth / 2, width, depth);
+                }
             });
         }
 
@@ -590,14 +743,14 @@
             ctx.shadowBlur = 0;
             if (label) {
                 ctx.fillStyle = '#07111b';
-                ctx.font = 'bold 7px system-ui';
+                ctx.font = fullMap ? 'bold 12px system-ui' : 'bold 7px system-ui';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(label, px, pz + 0.5);
             }
         };
 
-        if (wreckGroup && !inCity) {
+        if (wreckGroup && (!inCity || fullMap)) {
             const x = mapX(wreckGroup.position.x), z = mapZ(wreckGroup.position.z);
             ctx.fillStyle = '#f97316';
             ctx.fillRect(x - 5, z - 5, 10, 10);
@@ -609,7 +762,7 @@
             const name = part.userData.salvagePart || '';
             const label = name.startsWith('TIRE') ? 'T' : name === 'ENGINE' ? 'E' : name === 'BATTERY' ? 'B' : 'F';
             const color = name.startsWith('TIRE') ? '#fbbf24' : name === 'ENGINE' ? '#f97316' : name === 'BATTERY' ? '#22d3ee' : '#ef4444';
-            drawDot(part.position.x, part.position.z, color, 4.2, label);
+            drawDot(part.position.x, part.position.z, color, fullMap ? 7 : 4.2, label);
         });
         if (typeof zombies !== 'undefined' && Array.isArray(zombies)) {
             zombies.forEach(zombie => {
@@ -617,41 +770,63 @@
                 const object = zombie.mesh || zombie.group || zombie.model || zombie;
                 const x = Number.isFinite(zombie.x) ? zombie.x : object.position && object.position.x;
                 const z = Number.isFinite(zombie.z) ? zombie.z : object.position && object.position.z;
-                if (Number.isFinite(x) && Number.isFinite(z)) drawDot(x, z, '#fb3d4b', 2.8);
+                if (Number.isFinite(x) && Number.isFinite(z)) drawDot(x, z, '#fb3d4b', fullMap ? 5 : 2.8);
             });
         }
-        if (driveCar && driving) drawDot(driveCar.position.x, driveCar.position.z, '#34d399', 4.2, 'C');
+        if (driveCar && (driving || fullMap)) drawDot(driveCar.position.x, driveCar.position.z, '#34d399', fullMap ? 5 : 4.2, 'C');
 
         ctx.save();
-        ctx.translate(center, center);
+        ctx.translate(mapX(player.x), mapZ(player.z));
         ctx.rotate(typeof mouseX === 'number' ? -mouseX : 0);
         ctx.fillStyle = '#67e8f9';
         ctx.strokeStyle = '#082f49';
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = fullMap ? 2.5 : 1.5;
+        const playerArrowSize = fullMap ? 14 : 8;
         ctx.beginPath();
-        ctx.moveTo(0, -8); ctx.lineTo(6, 6); ctx.lineTo(0, 3); ctx.lineTo(-6, 6); ctx.closePath();
+        ctx.moveTo(0, -playerArrowSize); ctx.lineTo(playerArrowSize * 0.75, playerArrowSize * 0.75); ctx.lineTo(0, playerArrowSize * 0.38); ctx.lineTo(-playerArrowSize * 0.75, playerArrowSize * 0.75); ctx.closePath();
         ctx.fill(); ctx.stroke();
         ctx.restore();
         ctx.restore();
 
         ctx.beginPath();
-        ctx.arc(center, center, center - 2, 0, Math.PI * 2);
+        if (fullMap) ctx.rect(1, 1, size - 2, size - 2);
+        else ctx.arc(center, center, center - 2, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(125, 211, 252, .9)';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = fullMap ? 3 : 2;
         ctx.stroke();
         ctx.fillStyle = '#f8fafc';
-        ctx.font = 'bold 9px system-ui';
+        ctx.font = fullMap ? 'bold 18px system-ui' : 'bold 9px system-ui';
         ctx.textAlign = 'center';
-        ctx.fillText(inCity ? 'BRIGHT CITY' : 'OUTPOST', center, 14);
+        ctx.fillText(fullMap ? 'OUTPOST  ·  FOUR BIOMES  ·  BRIGHT CITY' : (inCity ? 'BRIGHT CITY' : 'OUTPOST'), center, fullMap ? 25 : 14);
     }
 
     function minimapFrame() {
         try {
-            if (worldScene && typeof gameState !== 'undefined' && gameState === 'PLAYING') drawDetailedMinimap();
-        } catch (error) { /* The normal game HUD remains available if a transition resets the canvas. */ }
+            if (worldScene && typeof gameState !== 'undefined') {
+                if (gameState === 'PLAYING' || fullMapOpen) drawDetailedMinimap();
+                if (fullMapOpen) drawDetailedMinimap(fullMapCanvas, true);
+            }
+        } catch (error) { /* The normal game HUD remains available if a scene refresh resets the map canvas. */ }
         window.requestAnimationFrame(minimapFrame);
     }
     window.requestAnimationFrame(minimapFrame);
+
+    fullMapButton.addEventListener('click', () => toggleFullMap(true));
+    document.getElementById('closeFullMapButton').addEventListener('click', closeFullMap);
+    fullMapScreen.addEventListener('click', event => {
+        if (event.target === fullMapScreen) closeFullMap();
+    });
+    window.addEventListener('keydown', event => {
+        if (event.key.toLowerCase() === 'm' && gameState === 'PLAYING') {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            toggleFullMap();
+        } else if (event.key === 'Escape' && fullMapOpen) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            closeFullMap();
+        }
+    }, true);
 
     salvageButton.addEventListener('click', interactWithCarAndParts);
     rideButton.addEventListener('click', toggleRide);
