@@ -99,3 +99,48 @@
         start();
     }
 })();
+
+// Offer the browser's native install prompt when this site is eligible as a PWA.
+(() => {
+    const button = document.getElementById('installAppButton');
+    const feedback = document.getElementById('installAppFeedback');
+    if (!button || !feedback) return;
+
+    let installPrompt = null;
+    window.addEventListener('beforeinstallprompt', event => {
+        event.preventDefault();
+        installPrompt = event;
+        button.textContent = 'INSTALL GAME ON PHONE';
+    });
+
+    button.addEventListener('click', async () => {
+        if (installPrompt) {
+            installPrompt.prompt();
+            const choice = await installPrompt.userChoice;
+            feedback.textContent = choice.outcome === 'accepted'
+                ? 'Install started. Find XC Shooter on your home screen.'
+                : 'Install cancelled. You can try again whenever you like.';
+            installPrompt = null;
+            return;
+        }
+
+        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        feedback.textContent = isIOS
+            ? 'In Safari, tap Share, then Add to Home Screen.'
+            : 'Open this game in Chrome, tap ⋮, then choose Install app or Add to Home screen. The site must be hosted over HTTPS.';
+    });
+
+    window.addEventListener('appinstalled', () => {
+        feedback.textContent = 'XC Shooter was added to your device.';
+        button.textContent = 'GAME INSTALLED';
+        button.disabled = true;
+    });
+
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./service-worker.js').catch(() => {
+                feedback.textContent = 'App install is available when this game is hosted securely over HTTPS.';
+            });
+        }, { once: true });
+    }
+})();
