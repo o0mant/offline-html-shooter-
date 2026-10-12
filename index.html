@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#030712">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="XC Shooter">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="app-icon.svg">
     <link rel="manifest" href="manifest.json">
     <title>XC Shooter - First-Person Survival</title>
     <!-- Tailwind CSS for modern responsive overlay screens -->
@@ -365,8 +369,11 @@
             </form>
             <p id="accountFeedback" class="account-feedback" role="status" aria-live="polite"></p>
             <button id="accountSwitch" class="account-switch" type="button">New here? Create an account</button>
-            <button id="installAppButton" class="install-app-button" type="button">INSTALL GAME ON PHONE</button>
-            <p id="installAppFeedback" class="install-app-feedback" role="status" aria-live="polite">Add the game to your home screen. This installs the web app, not an APK.</p>
+            <div class="install-app-options" role="group" aria-label="Choose your phone platform">
+                <button id="installAndroidButton" class="install-app-button" type="button">INSTALL ON ANDROID</button>
+                <button id="installIOSButton" class="install-app-button" type="button">INSTALL ON iOS</button>
+            </div>
+            <p id="installAppFeedback" class="install-app-feedback" role="status" aria-live="polite">Choose Android or iPhone/iPad for installation instructions. Requires secure HTTPS hosting.</p>
             <p class="account-notice">Profiles and game saves are stored locally in this browser and kept separate by account. This is not a shared online database; never use a real or reused password.</p>
         </section>
     </div>
