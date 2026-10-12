@@ -164,6 +164,31 @@
 </head>
 <body class="relative w-screen h-screen overflow-hidden">
 
+    <!-- Game introduction shown before the account and platform menus. -->
+    <main id="introScreen" class="intro-screen" aria-labelledby="introTitle">
+        <section class="intro-card">
+            <p class="intro-kicker">A SURVIVAL EXPERIENCE</p>
+            <h1 id="introTitle">XC <span>SHOOTER</span></h1>
+            <p class="intro-lead">Hold the outpost. Survive the horde. Find a way forward.</p>
+            <p class="intro-description">Take on the infected through the night, explore four dangerous biomes, recover parts to rebuild your car, and reach the Bright City.</p>
+            <div class="intro-highlights" aria-label="Game features">
+                <div><strong>01</strong><span>Survive escalating zombie waves</span></div>
+                <div><strong>02</strong><span>Explore forest, desert, marsh, and frost</span></div>
+                <div><strong>03</strong><span>Salvage, repair, and drive to the city</span></div>
+            </div>
+            <section class="developer-card" aria-labelledby="developerTitle">
+                <div class="developer-avatar" aria-hidden="true">V60</div>
+                <div class="developer-copy">
+                    <h2 id="developerTitle">CONTACT THE DEVELOPER</h2>
+                    <p>Instagram: <strong>@v60.png</strong></p>
+                </div>
+                <a class="developer-instagram" href="https://www.instagram.com/v60.png" target="_blank" rel="noopener noreferrer" aria-label="Open Instagram">INSTAGRAM ↗</a>
+                <p class="developer-note">Replace the placeholder with your Instagram username. The referenced v60.png image isn't in the project files yet.</p>
+            </section>
+            <button id="playNowButton" class="intro-play-button" type="button">PLAY THE GAME NOW <span aria-hidden="true">→</span></button>
+            <p class="intro-footnote">Your adventure begins at the outpost.</p>
+        </section>
+    </main>
 
     <!-- Local session count only; a shared backend is required for global player counts. -->
     <aside id="playerCountIndicator" class="player-count-indicator" role="status" aria-live="polite" aria-label="Open game tabs in this browser">
@@ -171,6 +196,11 @@
         <span><strong id="playerCountValue">1</strong> <span id="playerCountLabel">OPEN GAME TAB</span></span>
         <small>THIS BROWSER ONLY</small>
     </aside>
+
+    <nav id="pageNavigation" class="page-navigation" aria-label="Page navigation" hidden>
+        <button id="backNavigationButton" class="page-nav-back" type="button" aria-label="Go back">← <span>BACK</span></button>
+        <button id="exitToIntroButton" class="page-nav-exit" type="button">EXIT TO GAME INTRO</button>
+    </nav>
 
     <!-- 3D WebGL Canvas -->
     <div id="canvasContainer" class="absolute inset-0"></div>
@@ -284,6 +314,7 @@
                 <div class="bg-slate-900/85 border border-slate-700 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider text-sky-200">Weather: <span id="weatherDisplay">Clear</span></div>
                 <div class="flex flex-col items-center bg-slate-900/85 backdrop-blur border border-slate-800 p-3 rounded-2xl shadow-xl">
                 <div class="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-2">Sunrise Radar</div>
+                <button id="fullMapButton" class="full-map-button" type="button" aria-haspopup="dialog" aria-controls="fullMapScreen">OPEN FULL MAP</button>
                 <canvas id="minimapCanvas" width="220" height="220" aria-label="Detailed radar showing the player, zombies, vehicle, buildings, and salvage parts"></canvas>
                 <div class="minimap-legend"><span><i class="legend-player"></i>YOU</span><span><i class="legend-zombie"></i>HOSTILE</span><span><i class="legend-part"></i>PART</span></div>
                 </div>
@@ -311,6 +342,16 @@
             </div>
         </div>
     </div>
+
+    <!-- Full-screen world map; press M or use the radar button to open it. -->
+    <section id="fullMapScreen" class="full-map-screen" role="dialog" aria-modal="true" aria-labelledby="fullMapTitle" hidden>
+        <header class="full-map-header">
+            <div><h2 id="fullMapTitle">WORLD MAP</h2><p>Outpost, biomes, salvage, hostiles, and the city route</p></div>
+            <button id="closeFullMapButton" type="button">CLOSE <span>· M / ESC</span></button>
+        </header>
+        <canvas id="fullMapCanvas" width="800" height="800" aria-label="Full world map showing the outpost, four biomes, city, player, hostiles, and salvage parts"></canvas>
+        <div class="full-map-legend"><span>YOU</span><span>HOSTILE</span><span>ENGINE</span><span>BATTERY</span><span>FUEL</span><span>TIRES</span><span>WRECK / CAR</span></div>
+    </section>
 
     <!-- Inventory and weapon store -->
     <div id="equipmentScreen" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm hidden z-20 p-4 flex items-center justify-center">
@@ -355,7 +396,7 @@
             <p class="account-eyebrow">XC SHOOTER NETWORK</p>
             <h1 id="accountTitle">Welcome back</h1>
             <p id="accountDescription" class="account-description">Sign in to your survivor profile to continue to platform selection.</p>
-            <p class="account-notice">Accounts are saved only in this browser on this device. They do not sync between friends or devices; use a different username and email for each local profile, or choose PLAY AS GUEST.</p>
+            <p class="account-notice">A browser page cannot write new accounts into its original HTML file. Profiles are stored only in this browser on this device and do not sync between friends; shared accounts require a server and database. Choose PLAY AS GUEST if browser storage is unavailable.</p>
             <form id="accountForm" novalidate>
                 <label id="accountLoginLabel" for="accountLogin">Email or username</label>
                 <input id="accountLogin" name="login" type="text" autocomplete="username" required maxlength="254" placeholder="Email or username">
@@ -377,7 +418,7 @@
                 <button id="installIOSButton" class="install-app-button" type="button">INSTALL ON iOS</button>
             </div>
             <p id="installAppFeedback" class="install-app-feedback" role="status" aria-live="polite">Choose Android or iPhone/iPad for installation instructions. Requires secure HTTPS hosting.</p>
-            <p class="account-notice">Profiles and game saves are stored locally in this browser and kept separate by account. This is not a shared online database; never use a real or reused password.</p>
+            <p class="account-notice">Profiles and game saves stay in this browser; they are not written back into the HTML file. Browser privacy settings or private browsing may prevent saving. Never use a real or reused password.</p>
         </section>
     </div>
 
@@ -417,7 +458,16 @@
 
             <div id="modeStep" class="hidden">
                 <p id="modeStepTitle" class="text-sm font-bold text-amber-100 mb-4">Choose a game mode</p>
-                <div id="controlInstructions" class="space-y-2 text-left bg-slate-950/60 p-4 rounded-xl border border-amber-900/40 text-xs text-amber-100 mb-6"></div>
+                                    <div id="controlInstructions" class="space-y-2 text-left bg-slate-950/60 p-4 rounded-xl border border-amber-900/40 text-xs text-amber-100 mb-6"></div>
+                    <section id="mobileInstallPanel" class="mobile-install-panel" hidden aria-labelledby="mobileInstallTitle">
+                        <h3 id="mobileInstallTitle">INSTALL ON YOUR PHONE</h3>
+                        <p>Save XC Shooter to your Home Screen for easier access.</p>
+                        <div class="install-app-options">
+                            <button id="platformInstallAndroidButton" class="install-app-button" type="button">INSTALL ON ANDROID</button>
+                            <button id="platformInstallIOSButton" class="install-app-button" type="button">INSTALL ON iOS</button>
+                        </div>
+                        <p id="platformInstallAppFeedback" class="install-app-feedback" role="status" aria-live="polite">Choose Android or iPhone/iPad for installation guidance.</p>
+                    </section>
                 <div class="menu-options">
                     <button id="startButton" class="menu-option-button primary-option" type="button">START STORY MODE</button>
                     <button id="careerButton" class="menu-option-button" type="button">START CAREER MODE</button>
@@ -472,6 +522,43 @@
         </div>
     </div>
 
+
+    <script>
+        document.getElementById('playNowButton').addEventListener('click', () => {
+            document.getElementById('introScreen').classList.add('hidden');
+            document.getElementById('accountScreen').classList.remove('hidden');
+            document.getElementById('pageNavigation').hidden = false;
+            document.getElementById('accountLogin').focus();
+        });
+
+        document.getElementById('exitToIntroButton').addEventListener('click', exitGame);
+        document.getElementById('backNavigationButton').addEventListener('click', () => {
+            const byId = id => document.getElementById(id);
+            if (!byId('fullMapScreen').hidden) {
+                byId('closeFullMapButton').click();
+            } else if (!byId('equipmentScreen').classList.contains('hidden')) {
+                closeEquipment();
+            } else if (!byId('gameOverScreen').classList.contains('hidden')) {
+                exitGame();
+            } else if (!byId('pauseScreen').classList.contains('hidden')) {
+                resumeGame();
+            } else if (!byId('hud').classList.contains('hidden')) {
+                pauseGame();
+            } else if (!byId('startScreen').classList.contains('hidden')) {
+                if (!byId('modeStep').classList.contains('hidden')) {
+                    byId('modeStep').classList.add('hidden');
+                    byId('platformStep').classList.remove('hidden');
+                } else {
+                    byId('startScreen').classList.add('hidden');
+                    byId('accountScreen').classList.remove('hidden');
+                }
+            } else if (!byId('accountScreen').classList.contains('hidden')) {
+                byId('accountScreen').classList.add('hidden');
+                byId('introScreen').classList.remove('hidden');
+                byId('pageNavigation').hidden = true;
+            }
+        });
+    </script>
 
     <!-- Three.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -610,6 +697,7 @@
         function choosePlatform(platform) {
             selectedPlatform = platform;
             const windowsSelected = platform === 'WINDOWS';
+            document.getElementById('mobileInstallPanel').hidden = windowsSelected;
             document.getElementById('windowsModeButton').classList.toggle('selected', windowsSelected);
             document.getElementById('mobileModeButton').classList.toggle('selected', !windowsSelected);
             document.getElementById('windowsModeButton').setAttribute('aria-pressed', String(windowsSelected));
@@ -664,6 +752,7 @@
             document.getElementById('platformStep').classList.remove('hidden');
             document.getElementById('modeStep').classList.add('hidden');
             document.getElementById('platformHint').textContent = 'Select a platform to continue';
+            document.getElementById('mobileInstallPanel').hidden = true;
             selectedPlatform = 'WINDOWS';
             document.getElementById('windowsModeButton').classList.remove('selected');
             document.getElementById('mobileModeButton').classList.remove('selected');
@@ -712,8 +801,16 @@
                 feedback.textContent = '';
 
                 if (!form.reportValidity()) return;
+                try {
+                    const storageTestKey = `${ACCOUNT_KEY}:check:${Date.now()}`;
+                    localStorage.setItem(storageTestKey, '1');
+                    localStorage.removeItem(storageTestKey);
+                } catch (error) {
+                    feedback.textContent = 'This browser is blocking or has no space for site storage. Allow storage for this site and try again, or choose PLAY AS GUEST.';
+                    return;
+                }
                 if (!window.crypto || !window.crypto.subtle) {
-                    feedback.textContent = 'Secure password hashing is unavailable in this browser context.';
+                    feedback.textContent = 'Secure password hashing is unavailable. Open the game over HTTPS in a supported browser, or choose PLAY AS GUEST.';
                     return;
                 }
                 const accounts = readAccounts();
@@ -757,7 +854,7 @@
                     passwordInput.value = '';
                     enterPlatformSelection(`dawnSurvivorSave:${encodeURIComponent(signedInAccount.email)}`);
                 } catch (error) {
-                    feedback.textContent = 'Could not save account or game data in this browser. Check browser storage settings.';
+                    feedback.textContent = 'Account creation or sign-in failed. Check that this site can use browser storage and try again; data cannot be saved back into the HTML file.';
                 } finally {
                     submit.disabled = false;
                 }
@@ -2121,6 +2218,8 @@
         }
 
         function exitGame() {
+            const mapScreen = document.getElementById('fullMapScreen');
+            if (mapScreen && !mapScreen.hidden) document.getElementById('closeFullMapButton').click();
             saveGameProgress(false);
             if (document.pointerLockElement) document.exitPointerLock();
             document.getElementById('mobileControls').classList.remove('active');
@@ -2129,10 +2228,10 @@
             document.getElementById('pauseScreen').classList.add('hidden');
             document.getElementById('equipmentScreen').classList.add('hidden');
             document.getElementById('gameOverScreen').classList.add('hidden');
-            document.getElementById('startScreen').classList.remove('hidden');
-            document.getElementById('modeStep').classList.add('hidden');
-            document.getElementById('platformStep').classList.remove('hidden');
-            document.getElementById('startFeedback').textContent = 'Game exited. Choose a platform to play again.';
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('accountScreen').classList.add('hidden');
+            document.getElementById('introScreen').classList.remove('hidden');
+            document.getElementById('pageNavigation').hidden = true;
         }
 
 
