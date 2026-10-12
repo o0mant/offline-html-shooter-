@@ -583,7 +583,9 @@ button:focus-visible {
 .account-card {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
+  max-height: calc(100vh - 3rem);
+  overflow-x: hidden;
+  overflow-y: auto;
   width: min(100%, 440px);
   padding: 2.25rem;
   border: 1px solid rgba(251, 191, 36, 0.38);
