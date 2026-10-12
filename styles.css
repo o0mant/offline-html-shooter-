@@ -219,6 +219,14 @@ button:focus-visible {
 }
 
 /* Start menu mode selection and save controls */
+.tutorial-heading {
+  margin: 0 0 0.35rem;
+  color: #fbbf24;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
 .menu-options {
   display: grid;
   gap: 0.65rem;
