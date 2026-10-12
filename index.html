@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Dawn Survivor — First-Person Survival Simulator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XC Shooter - First-Person Survival</title>
     <!-- Tailwind CSS for modern responsive overlay screens -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css">
@@ -158,93 +158,8 @@
 <body class="relative w-screen h-screen overflow-hidden">
 
 
-    <!-- Device selection from page1.html -->
-    <div id="deviceSelectionScreen" class="absolute inset-0 bg-slate-950/95 flex items-center justify-center z-30 p-6">
-        <section class="w-full max-w-lg rounded-2xl border border-emerald-500/40 bg-slate-900/95 p-8 text-center shadow-2xl">
-            <h1 class="mb-2 text-3xl font-black tracking-wide text-amber-400">DAWN SURVIVOR</h1>
-            <p class="text-slate-300">Choose how you want to play.</p>
-            <div class="mt-6 grid gap-4 sm:grid-cols-2">
-                <button class="device-option rounded-xl border border-sky-500/50 bg-slate-800 p-5 text-left text-white hover:border-sky-300" type="button" data-device="desktop">
-                    <span class="block text-lg font-bold text-sky-300">Windows</span>
-                    <span class="mt-2 block text-sm text-slate-300">Keyboard and mouse controls</span>
-                </button>
-                <button class="device-option rounded-xl border border-emerald-500/50 bg-slate-800 p-5 text-left text-white hover:border-emerald-300" type="button" data-device="phone">
-                    <span class="block text-lg font-bold text-emerald-300">Phone</span>
-                    <span class="mt-2 block text-sm text-slate-300">Touch joystick, swipe aiming, and on-screen combat buttons</span>
-                </button>
-            </div>
-            <p id="deviceSelectionFeedback" class="mt-5 min-h-5 text-xs text-amber-200" aria-live="polite"></p>
-        </section>
-    </div>
-
-    <!-- Local account sign-in / registration. Accounts are stored in this browser only. -->
-    <div id="loginScreen" class="auth-screen hidden" aria-labelledby="loginTitle">
-        <section class="auth-card">
-            <div class="auth-mark" aria-hidden="true">DS</div>
-            <p class="auth-eyebrow">DAWN SURVIVOR ACCESS</p>
-            <h2 id="loginTitle">Welcome back</h2>
-            <p class="auth-copy">Continue on <strong id="chosenDeviceLabel">Windows</strong>.</p>
-            <div class="auth-tabs" role="tablist" aria-label="Account access">
-                <button class="auth-tab active" type="button" data-auth-mode="login">Sign in</button>
-                <button class="auth-tab" type="button" data-auth-mode="register">Create account</button>
-            </div>
-            <form id="loginForm" class="auth-form">
-                <label for="loginEmail">Email</label>
-                <input class="auth-input" id="loginEmail" name="email" type="email" autocomplete="username" placeholder="you@example.com" required>
-                <label for="loginPassword">Password</label>
-                <input class="auth-input" id="loginPassword" name="password" type="password" autocomplete="current-password" minlength="4" placeholder="At least 4 characters" required>
-                <p class="auth-feedback" aria-live="polite">Your account is saved only in this browser.</p>
-                <button class="auth-submit" type="submit">SIGN IN</button>
-            </form>
-            <form id="registerForm" class="auth-form hidden">
-                <label for="registerName">Display name</label>
-                <input class="auth-input" id="registerName" name="name" type="text" autocomplete="name" maxlength="32" placeholder="Survivor name" required>
-                <label for="registerEmail">Email</label>
-                <input class="auth-input" id="registerEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
-                <label for="registerPassword">Password</label>
-                <input class="auth-input" id="registerPassword" name="password" type="password" autocomplete="new-password" minlength="6" placeholder="At least 6 characters" required>
-                <label for="registerConfirmPassword">Confirm password</label>
-                <input class="auth-input" id="registerConfirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Re-enter your password" required>
-                <button class="auth-submit" type="submit">CREATE ACCOUNT</button>
-            </form>
-            <p id="loginFeedback" class="auth-feedback" aria-live="polite"></p>
-            <button id="guestPlayButton" class="auth-submit guest-submit" type="button">PLAY AS GUEST</button>
-            <p class="guest-note">Guest progress stays on this device and can’t be linked to an account.</p>
-            <button id="backToDeviceButton" class="auth-back" type="button">← Change device</button>
-        </section>
-    </div>
-
-    <div id="accountPreviewScreen" class="account-preview-screen hidden" role="dialog" aria-modal="true" aria-labelledby="accountPreviewTitle">
-        <section class="account-preview-card">
-            <button id="closeAccountPreview" class="account-preview-close" type="button" aria-label="Close account preview">×</button>
-            <div class="auth-mark" aria-hidden="true">DS</div>
-            <p class="auth-eyebrow">LOCAL SURVIVOR PROFILE</p>
-            <h2 id="accountPreviewTitle">Your account</h2>
-            <div class="account-details">
-                <div><span>DISPLAY NAME</span><strong id="previewName">—</strong></div>
-                <div><span>EMAIL</span><strong id="previewEmail">—</strong></div>
-                <div><span>DEVICE</span><strong id="previewDevice">—</strong></div>
-                <div><span>ACCOUNT CREATED</span><strong id="previewCreated">—</strong></div>
-            </div>
-            <button id="editAccountButton" class="auth-back" type="button">Edit profile</button>
-            <form id="editAccountForm" class="auth-form hidden">
-                <label for="editAccountName">Display name</label>
-                <input class="auth-input" id="editAccountName" type="text" maxlength="32" required>
-                <label for="editAccountEmail">Email</label>
-                <input class="auth-input" id="editAccountEmail" type="email" required>
-                <button class="auth-submit" type="submit">SAVE PROFILE</button>
-            </form>
-            <p id="profileFeedback" class="auth-feedback" aria-live="polite"></p>
-            <button id="signOutButton" class="auth-back" type="button">Sign out</button>
-        </section>
-    </div>
-
     <!-- 3D WebGL Canvas -->
     <div id="canvasContainer" class="absolute inset-0"></div>
-    <div id="cinematicFx" class="cinematic-fx" aria-hidden="true">
-        <div class="fx-scanlines"></div>
-        <div class="fx-vignette"></div>
-    </div>
 
 
     <!-- DOM CONTAINER FOR 3D ZOMBIE HEALTH BARS -->
@@ -270,6 +185,21 @@
         <div class="scope-crosshair"></div>
     </div>
 
+    <!-- Mobile-only touch controls; enabled when Mobile is selected. -->
+    <div id="mobileControls" aria-label="Mobile game controls">
+        <div id="touchLookArea" aria-label="Swipe here to look around"></div>
+        <div id="touchJoystick" aria-label="Movement joystick">
+            <div id="touchJoystickKnob"></div>
+        </div>
+        <div class="touch-action-buttons">
+            <button class="touch-action touch-fire" data-touch="fire" type="button" aria-label="Fire">FIRE</button>
+            <button class="touch-action" data-touch="ads" type="button" aria-label="Aim down sights">AIM</button>
+            <button class="touch-action" data-touch="jump" type="button" aria-label="Jump">JUMP</button>
+            <button class="touch-action" data-touch="sprint" type="button" aria-label="Sprint">SPRINT</button>
+            <button class="touch-action" data-touch="reload" type="button" aria-label="Reload">RELOAD</button>
+            <button class="touch-action" data-touch="pickup" type="button" aria-label="Pick up nearest weapon">PICK UP</button>
+        </div>
+    </div>
 
     <!-- HUD OVERLAY -->
     <div id="hud" class="absolute inset-0 pointer-events-none p-6 flex flex-col justify-between hidden z-10">
@@ -367,22 +297,6 @@
         </div>
     </div>
 
-    <!-- Touch controls shown only after selecting Phone. -->
-    <div id="touchControls" class="touch-controls" aria-label="Touchscreen game controls">
-        <div id="movePad" class="touch-pad move-pad" aria-label="Movement joystick">
-            <span class="touch-pad-label">MOVE</span>
-            <span class="move-knob" id="moveKnob"></span>
-        </div>
-        <div id="lookPad" class="look-pad" aria-label="Drag to look around"></div>
-        <div class="touch-action-group">
-            <button id="touchJump" class="touch-action touch-jump" type="button" aria-label="Jump">JUMP</button>
-            <button id="touchAds" class="touch-action touch-ads" type="button" aria-label="Aim down sights">AIM</button>
-            <button id="touchFire" class="touch-action touch-fire" type="button" aria-label="Fire weapon">FIRE</button>
-            <button id="touchReload" class="touch-action touch-reload" type="button" aria-label="Reload">RELOAD</button>
-            <button id="touchSprint" class="touch-action touch-sprint" type="button" aria-label="Sprint">SPRINT</button>
-        </div>
-    </div>
-
     <!-- Inventory and weapon store -->
     <div id="equipmentScreen" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm hidden z-20 p-4 flex items-center justify-center">
                     <div class="max-w-5xl w-full max-h-[90vh] overflow-y-auto bg-slate-900/95 border border-amber-500/40 rounded-2xl p-6 shadow-2xl">
@@ -409,8 +323,28 @@
         </div>
     </div>
 
+    <!-- Local demo account screen; production accounts require a server-side database. -->
+    <div id="accountScreen" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center z-30 p-6">
+        <section class="account-card">
+            <div class="account-mark" aria-hidden="true">DS</div>
+            <p class="account-eyebrow">XC SHOOTER NETWORK</p>
+            <h1 id="accountTitle">Welcome back</h1>
+            <p id="accountDescription" class="account-description">Sign in to your survivor profile to continue to platform selection.</p>
+            <form id="accountForm" novalidate>
+                <label for="accountEmail">Email address</label>
+                <input id="accountEmail" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com">
+                <label for="accountPassword">Password</label>
+                <input id="accountPassword" name="password" type="password" autocomplete="current-password" required minlength="8" placeholder="At least 8 characters">
+                <button id="accountSubmit" class="account-submit" type="submit">SIGN IN</button>
+            </form>
+            <p id="accountFeedback" class="account-feedback" role="status" aria-live="polite"></p>
+            <button id="accountSwitch" class="account-switch" type="button">New here? Create an account</button>
+            <p class="account-notice">Demo accounts are saved only in this browser on this device. Do not use a real or reused password.</p>
+        </section>
+    </div>
+
     <!-- UI OVERLAY: START MENU -->
-    <div id="startScreen" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center hidden z-20 p-6">
+    <div id="startScreen" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center z-20 p-6 hidden">
         <div id="startCard" class="max-w-md w-full bg-amber-950/95 border border-amber-500/30 rounded-2xl p-8 text-center shadow-2xl relative overflow-hidden catch-animation">
             <div class="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
            
@@ -419,38 +353,41 @@
             </div>
 
 
-            <h1 class="text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500 mb-1">DAWN SURVIVOR</h1>
+            <h1 class="text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500 mb-1">XC SHOOTER</h1>
             <p class="text-amber-300/70 text-xs uppercase tracking-widest mb-6">Sunrise Tactical Outpost Simulator</p>
            
-            <div class="space-y-2 text-left bg-slate-950/60 p-4 rounded-xl border border-amber-900/40 text-xs text-amber-100 mb-6">
-                <div class="flex justify-between"><span><strong class="text-amber-400">W, A, S, D:</strong></span> <span>Move & Escape</span></div>
-                <div class="flex justify-between"><span><strong class="text-amber-400">SHIFT:</strong></span> <span>Sprint</span></div>
-                <div class="flex justify-between"><span><strong class="text-amber-400">SPACE:</strong></span> <span>Jump</span></div>
-                <div class="flex justify-between"><span><strong class="text-amber-400">MOUSE:</strong></span> <span>First-Person Aim</span></div>
-                <div class="flex justify-between"><span><strong class="text-amber-400">LEFT CLICK:</strong></span> <span>Fire Weapon</span></div>
-                <div class="flex justify-between"><span><strong class="text-amber-400">RIGHT CLICK:</strong></span> <span>Ironsights (ADS)</span></div>
-                <div class="flex justify-between"><span><strong class="text-amber-400">R KEY:</strong></span> <span>Reload</span></div>
-                <div class="flex justify-between"><span><strong class="text-amber-400">ESC:</strong></span> <span>Pause, resume, or open the store</span></div>
+            <div id="platformStep">
+                <p class="text-sm text-amber-100/80 mb-4">Choose how you want to play.</p>
+                <div class="platform-picker" role="group" aria-label="Choose your platform">
+                    <p class="platform-picker-title">CHOOSE YOUR PLATFORM</p>
+                    <button id="windowsModeButton" class="platform-option" type="button" aria-pressed="false">
+                        <span class="platform-icon windows-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                        <span class="platform-copy"><strong>WINDOWS</strong><small>Keyboard &amp; mouse</small></span>
+                        <span class="platform-check" aria-hidden="true">✓</span>
+                    </button>
+                    <button id="mobileModeButton" class="platform-option" type="button" aria-pressed="false">
+                        <span class="platform-icon phone-icons" aria-hidden="true">
+                            <svg class="android-logo" viewBox="0 0 24 24"><path d="M7.2 8.1 5.8 5.7a.55.55 0 0 1 .95-.55l1.48 2.52a8 8 0 0 1 7.54 0l1.48-2.52a.55.55 0 0 1 .95.55l-1.4 2.4A7.1 7.1 0 0 1 20 14H4a7.1 7.1 0 0 1 3.2-5.9ZM8 10.2a.8.8 0 1 0 0 1.6.8.8 0 0 0 0-1.6Zm8 0a.8.8 0 1 0 0 1.6.8.8 0 0 0 0-1.6ZM5 15h14v3.1a1.9 1.9 0 0 1-1.9 1.9H6.9A1.9 1.9 0 0 1 5 18.1V15Zm-2 0h1v3H3a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1Zm17 0h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-1v-3ZM7 20h1v2H7v-2Zm9 0h1v2h-1v-2Z"/></svg>
+                            <svg class="apple-logo" viewBox="0 0 24 24"><path d="M16.37 1.43c0 1.14-.42 2.2-1.18 3.05-.83.93-2.18 1.64-3.36 1.55a3.76 3.76 0 0 1 1.2-3.02c.84-.9 2.3-1.56 3.34-1.58ZM20.5 17.43c-.57 1.27-.84 1.84-1.57 2.96-1.02 1.55-2.45 3.48-4.22 3.5-1.58.02-1.99-1.03-4.14-1.02-2.15.01-2.61 1.05-4.19 1.03-1.77-.02-3.13-1.76-4.15-3.31C-.63 16.25-.98 10.53 1.4 7.49a6.3 6.3 0 0 1 5.06-2.72c1.88-.02 3.07 1.03 4.63 1.03 1.52 0 2.45-1.03 4.61-1.03a6.18 6.18 0 0 1 4.67 2.47c-4.1 2.25-3.43 8.1.13 10.19Z" transform="translate(1 0) scale(.9)"/></svg>
+                        </span>
+                        <span class="platform-copy"><strong>PHONE</strong><small>Android &amp; iPhone · full touch</small></span>
+                        <span class="platform-check" aria-hidden="true">✓</span>
+                    </button>
+                    <p id="platformHint" class="platform-hint" aria-live="polite">Select a platform to continue</p>
+                </div>
             </div>
 
-
-            <div id="accountSummary" class="account-summary hidden">
-                <span class="account-status-dot" aria-hidden="true"></span>
-                <div class="account-summary-copy"><span>SIGNED IN AS</span><strong id="menuAccountName">Survivor</strong></div>
-                <button id="accountPreviewButton" type="button">VIEW PROFILE</button>
-            </div>
-            <div id="guestSummary" class="guest-summary hidden" aria-live="polite">
-                <span class="guest-status-dot" aria-hidden="true"></span>
-                <div><strong>GUEST SESSION</strong><span>Playing locally on this device</span></div>
-            </div>
-            <div class="menu-options">
-                <button id="startButton" class="menu-option-button primary-option" type="button">START STORY MODE</button>
-                <button id="careerButton" class="menu-option-button" type="button">START CAREER MODE</button>
-                <button id="loadGameButton" class="menu-option-button" type="button">CONTINUE SAVED GAME</button>
-                <button id="changeDeviceButton" class="menu-option-button" type="button">CHANGE DEVICE</button>
-                <button id="visualFxButton" class="menu-option-button fx-option" type="button" aria-pressed="true">CINEMATIC FX: ON</button>
-                <button id="exitGameButton" class="menu-option-button exit-option" type="button">EXIT GAME</button>
-                <p id="startFeedback" class="menu-feedback" aria-live="polite"></p>
+            <div id="modeStep" class="hidden">
+                <p id="modeStepTitle" class="text-sm font-bold text-amber-100 mb-4">Choose a game mode</p>
+                <div id="controlInstructions" class="space-y-2 text-left bg-slate-950/60 p-4 rounded-xl border border-amber-900/40 text-xs text-amber-100 mb-6"></div>
+                <div class="menu-options">
+                    <button id="startButton" class="menu-option-button primary-option" type="button">START STORY MODE</button>
+                    <button id="careerButton" class="menu-option-button" type="button">START CAREER MODE</button>
+                    <button id="loadGameButton" class="menu-option-button" type="button">CONTINUE SAVED GAME</button>
+                    <button id="exitGameButton" class="menu-option-button exit-option" type="button">EXIT GAME</button>
+                    <button id="backToPlatformButton" class="menu-option-button" type="button">BACK · CHANGE PLATFORM</button>
+                    <p id="startFeedback" class="menu-feedback" aria-live="polite"></p>
+                </div>
             </div>
         </div>
     </div>
@@ -498,43 +435,19 @@
     </div>
 
 
-    <script>
-        // Guests skip account creation; game progress remains local to this browser.
-        document.getElementById('guestPlayButton').addEventListener('click', () => {
-            currentAccount = null;
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('accountPreviewScreen').classList.add('hidden');
-            document.getElementById('accountSummary').classList.add('hidden');
-            document.getElementById('guestSummary').classList.remove('hidden');
-            document.getElementById('startScreen').classList.remove('hidden');
-            document.getElementById('startFeedback').textContent = 'Guest session ready. Your progress is saved locally on this device.';
-            try { sessionStorage.setItem('dawnSurvivorGuest', 'true'); } catch (_) {}
-        });
-
-        const fxButton = document.getElementById('visualFxButton');
-        const fxEnabled = (() => {
-            try { return localStorage.getItem('dawnSurvivorFx') !== 'off'; } catch (_) { return true; }
-        })();
-        document.body.classList.toggle('cinematic-fx', fxEnabled);
-        fxButton.setAttribute('aria-pressed', String(fxEnabled));
-        fxButton.textContent = `CINEMATIC FX: ${fxEnabled ? 'ON' : 'OFF'}`;
-        fxButton.addEventListener('click', () => {
-            const enabled = document.body.classList.toggle('cinematic-fx');
-            fxButton.setAttribute('aria-pressed', String(enabled));
-            fxButton.textContent = `CINEMATIC FX: ${enabled ? 'ON' : 'OFF'}`;
-            try { localStorage.setItem('dawnSurvivorFx', enabled ? 'on' : 'off'); } catch (_) {}
-        });
-    </script>
-
-    <!-- Three.js -->
+    <!-- Three.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 
     <script>
         // --- GAME & THREE.JS SETUP ---
         let scene, camera, renderer;
         let gameState = 'START'; // START, PLAYING, PAUSED, MENU, GAMEOVER
         let gameMode = 'STORY';
-        let isPhoneDevice = false;
+        let selectedPlatform = 'WINDOWS';
+        let touchMoveX = 0;
+        let touchMoveY = 0;
+        let virtualSprint = false;
         const SAVE_KEY = 'dawnSurvivorSave';
         let keys = {};
         let ambientLight, sunLight, rainField;
@@ -614,6 +527,224 @@
         const minimapCanvas = document.getElementById('minimapCanvas');
         const minimapCtx = minimapCanvas.getContext('2d');
 
+        function choosePlatform(platform) {
+            selectedPlatform = platform;
+            const windowsSelected = platform === 'WINDOWS';
+            document.getElementById('windowsModeButton').classList.toggle('selected', windowsSelected);
+            document.getElementById('mobileModeButton').classList.toggle('selected', !windowsSelected);
+            document.getElementById('windowsModeButton').setAttribute('aria-pressed', String(windowsSelected));
+            document.getElementById('mobileModeButton').setAttribute('aria-pressed', String(!windowsSelected));
+            document.getElementById('platformHint').textContent = windowsSelected
+                ? 'Selected: Windows · Keyboard and mouse'
+                : 'Selected: Phone · Full touch controls';
+            document.getElementById('modeStepTitle').textContent = `${windowsSelected ? 'Windows' : 'Phone'} selected — choose a game mode`;
+            document.getElementById('controlInstructions').innerHTML = windowsSelected
+                ? '<div><strong class="text-amber-400">W, A, S, D:</strong> Move</div><div><strong class="text-amber-400">SHIFT:</strong> Sprint</div><div><strong class="text-amber-400">SPACE:</strong> Jump</div><div><strong class="text-amber-400">MOUSE:</strong> Aim · <strong class="text-amber-400">LEFT CLICK:</strong> Fire</div><div><strong class="text-amber-400">RIGHT CLICK:</strong> Aim down sights · <strong class="text-amber-400">R:</strong> Reload</div><div><strong class="text-amber-400">ESC:</strong> Pause or open the store</div>'
+                : '<div><strong class="text-amber-400">JOYSTICK:</strong> Move and steer</div><div><strong class="text-amber-400">SWIPE RIGHT SIDE:</strong> Aim</div><div><strong class="text-amber-400">FIRE / AIM:</strong> Shoot and aim down sights</div><div><strong class="text-amber-400">JUMP / SPRINT:</strong> Move quickly and avoid attacks</div><div><strong class="text-amber-400">RELOAD / PICK UP:</strong> Reload or collect nearby weapons</div>';
+            document.getElementById('platformStep').classList.add('hidden');
+            document.getElementById('modeStep').classList.remove('hidden');
+            document.getElementById('startFeedback').textContent = '';
+        }
+
+        let accountMode = 'login';
+        const ACCOUNT_KEY = 'dawnSurvivorAccountsV1';
+
+        function readAccounts() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(ACCOUNT_KEY) || '[]');
+                return Array.isArray(saved) ? saved : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function hashAccountPassword(password, saltHex) {
+            const salt = saltHex
+                ? new Uint8Array(saltHex.match(/.{2}/g).map(byte => parseInt(byte, 16)))
+                : crypto.getRandomValues(new Uint8Array(16));
+            return crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits'])
+                .then(key => crypto.subtle.deriveBits(
+                    { name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' },
+                    key,
+                    256
+                ))
+                .then(bits => ({
+                    salt: Array.from(salt, byte => byte.toString(16).padStart(2, '0')).join(''),
+                    hash: Array.from(new Uint8Array(bits), byte => byte.toString(16).padStart(2, '0')).join('')
+                }));
+        }
+
+        function setAccountMode(mode) {
+            accountMode = mode;
+            const signup = mode === 'signup';
+            document.getElementById('accountTitle').textContent = signup ? 'Join the survivors' : 'Welcome back';
+            document.getElementById('accountDescription').textContent = signup
+                ? 'Create your survivor profile to secure your outpost and continue your mission.'
+                : 'Sign in to your survivor profile to continue to platform selection.';
+            document.querySelector('.account-card').classList.toggle('is-signup', signup);
+            document.getElementById('accountSubmit').textContent = signup ? 'CREATE MY ACCOUNT' : 'SIGN IN';
+            document.getElementById('accountSwitch').textContent = signup
+                ? 'Already have an account? Sign in'
+                : 'New here? Create an account';
+            document.getElementById('accountPassword').autocomplete = signup ? 'new-password' : 'current-password';
+            document.getElementById('accountFeedback').textContent = '';
+        }
+
+        function setupAccountAuth() {
+            const form = document.getElementById('accountForm');
+            document.getElementById('accountSwitch').addEventListener('click', () => {
+                setAccountMode(accountMode === 'login' ? 'signup' : 'login');
+            });
+            form.addEventListener('submit', async event => {
+                event.preventDefault();
+                const feedback = document.getElementById('accountFeedback');
+                const email = document.getElementById('accountEmail').value.trim().toLowerCase();
+                const passwordInput = document.getElementById('accountPassword');
+                const password = passwordInput.value;
+                feedback.textContent = '';
+
+                if (!form.reportValidity()) return;
+                if (!window.crypto || !window.crypto.subtle) {
+                    feedback.textContent = 'Secure password hashing is unavailable in this browser context.';
+                    return;
+                }
+                const accounts = readAccounts();
+                const existing = accounts.find(account => account.email === email);
+                const submit = document.getElementById('accountSubmit');
+                submit.disabled = true;
+
+                try {
+                    if (accountMode === 'signup') {
+                        if (existing) {
+                            feedback.textContent = 'An account with that email already exists. Sign in instead.';
+                            return;
+                        }
+                        const credentials = await hashAccountPassword(password);
+                        accounts.push({ email, salt: credentials.salt, hash: credentials.hash });
+                        localStorage.setItem(ACCOUNT_KEY, JSON.stringify(accounts));
+                    } else {
+                        if (!existing) {
+                            feedback.textContent = 'Email or password is incorrect.';
+                            return;
+                        }
+                        const credentials = await hashAccountPassword(password, existing.salt);
+                        if (credentials.hash !== existing.hash) {
+                            feedback.textContent = 'Email or password is incorrect.';
+                            return;
+                        }
+                    }
+
+                    passwordInput.value = '';
+                    document.getElementById('accountScreen').classList.add('hidden');
+                    document.getElementById('startScreen').classList.remove('hidden');
+                    document.getElementById('platformStep').classList.remove('hidden');
+                    document.getElementById('modeStep').classList.add('hidden');
+                    document.getElementById('platformHint').textContent = 'Select a platform to continue';
+                    selectedPlatform = 'WINDOWS';
+                    document.getElementById('windowsModeButton').classList.remove('selected');
+                    document.getElementById('mobileModeButton').classList.remove('selected');
+                    document.getElementById('windowsModeButton').setAttribute('aria-pressed', 'false');
+                    document.getElementById('mobileModeButton').setAttribute('aria-pressed', 'false');
+                } catch (error) {
+                    feedback.textContent = 'Could not save account data in this browser. Check browser storage settings.';
+                } finally {
+                    submit.disabled = false;
+                }
+            });
+        }
+
+        function setupTouchControls() {
+            const joystick = document.getElementById('touchJoystick');
+            const knob = document.getElementById('touchJoystickKnob');
+            const lookArea = document.getElementById('touchLookArea');
+            let joystickPointer = null;
+            let lookPointer = null;
+            let lastLookX = 0;
+            let lastLookY = 0;
+
+            joystick.addEventListener('pointerdown', event => {
+                event.preventDefault();
+                joystickPointer = event.pointerId;
+                joystick.setPointerCapture(event.pointerId);
+                updateJoystick(event);
+            });
+            joystick.addEventListener('pointermove', event => {
+                if (event.pointerId === joystickPointer) updateJoystick(event);
+            });
+            const resetJoystick = event => {
+                if (event.pointerId !== joystickPointer) return;
+                joystickPointer = null;
+                touchMoveX = touchMoveY = 0;
+                knob.style.transform = 'translate(0, 0)';
+            };
+            joystick.addEventListener('pointerup', resetJoystick);
+            joystick.addEventListener('pointercancel', resetJoystick);
+            joystick.addEventListener('lostpointercapture', resetJoystick);
+
+            function updateJoystick(event) {
+                const rect = joystick.getBoundingClientRect();
+                const max = rect.width * 0.34;
+                let dx = event.clientX - (rect.left + rect.width / 2);
+                let dy = event.clientY - (rect.top + rect.height / 2);
+                const length = Math.hypot(dx, dy);
+                if (length > max) { dx = dx / length * max; dy = dy / length * max; }
+                touchMoveX = dx / max;
+                touchMoveY = dy / max;
+                knob.style.transform = `translate(${dx}px, ${dy}px)`;
+            }
+
+            lookArea.addEventListener('pointerdown', event => {
+                if (gameState !== 'PLAYING') return;
+                event.preventDefault();
+                lookPointer = event.pointerId;
+                lastLookX = event.clientX;
+                lastLookY = event.clientY;
+                lookArea.setPointerCapture(event.pointerId);
+            });
+            lookArea.addEventListener('pointermove', event => {
+                if (event.pointerId !== lookPointer || gameState !== 'PLAYING') return;
+                const dx = event.clientX - lastLookX;
+                const dy = event.clientY - lastLookY;
+                lastLookX = event.clientX;
+                lastLookY = event.clientY;
+                mouseX -= dx * 0.006;
+                // Match standard touch look: swipe up to look up, swipe down to look down.
+                mouseY = Math.max(-1.2, Math.min(1.2, mouseY - dy * 0.006));
+            });
+            const resetLook = event => { if (event.pointerId === lookPointer) lookPointer = null; };
+            lookArea.addEventListener('pointerup', resetLook);
+            lookArea.addEventListener('pointercancel', resetLook);
+            lookArea.addEventListener('lostpointercapture', resetLook);
+
+            const actions = document.querySelectorAll('[data-touch]');
+            actions.forEach(button => {
+                button.addEventListener('pointerdown', event => {
+                    event.preventDefault();
+                    button.setPointerCapture(event.pointerId);
+                    const action = button.dataset.touch;
+                    if (action === 'fire') isMouseDown = true;
+                    if (action === 'ads') {
+                        player.isADS = true;
+                        document.getElementById('adsOverlay').style.display = 'flex';
+                    }
+                    if (action === 'sprint') virtualSprint = true;
+                    if (action === 'jump' && gameState === 'PLAYING' && jumpHeight <= 0) jumpVelocity = 7;
+                    if (action === 'reload') reloadWeapon();
+                    if (action === 'pickup') pickupNearestWeapon();
+                });
+                const releaseAction = () => {
+                    if (button.dataset.touch === 'fire') isMouseDown = false;
+                    if (button.dataset.touch === 'ads') {
+                        player.isADS = false;
+                        document.getElementById('adsOverlay').style.display = 'none';
+                    }
+                    if (button.dataset.touch === 'sprint') virtualSprint = false;
+                };
+                button.addEventListener('pointerup', releaseAction);
+                button.addEventListener('pointercancel', releaseAction);
+                button.addEventListener('lostpointercapture', releaseAction);
+            });
+        }
 
         function init() {
             // Scene Setup - Sunrise Environment with Warm Golden Glow & Light Fog
@@ -761,7 +892,7 @@
 
             const canvasEl = document.getElementById('canvasContainer');
             canvasEl.addEventListener('click', () => {
-                if(gameState === 'PLAYING' && !isPhoneDevice) {
+                if(gameState === 'PLAYING' && selectedPlatform === 'WINDOWS') {
                     document.body.requestPointerLock();
                 }
             });
@@ -800,7 +931,33 @@
 
             window.addEventListener('contextmenu', e => e.preventDefault());
             document.addEventListener('pointerlockchange', () => {
-                if (!isPhoneDevice && gameState === 'PLAYING' && document.pointerLockElement !== document.body) pauseGame();
+                if (selectedPlatform === 'WINDOWS' && gameState === 'PLAYING' && document.pointerLockElement !== document.body) pauseGame();
+            });
+            setupTouchControls();
+            setupAccountAuth();
+
+            // Save normally through the existing handler, then return to mode selection.
+            document.getElementById('saveGameButton').addEventListener('click', () => {
+                window.setTimeout(() => {
+                    gameState = 'START';
+                    keys = {};
+                    touchMoveX = 0;
+                    touchMoveY = 0;
+                    virtualSprint = false;
+                    isMouseDown = false;
+                    player.isADS = false;
+                    document.getElementById('adsOverlay').style.display = 'none';
+                    document.getElementById('hud').classList.add('hidden');
+                    document.getElementById('pauseScreen').classList.add('hidden');
+                    document.getElementById('equipmentScreen').classList.add('hidden');
+                    document.getElementById('gameOverScreen').classList.add('hidden');
+                    document.getElementById('mobileControls').classList.remove('active');
+                    document.getElementById('startScreen').classList.remove('hidden');
+                    document.getElementById('platformStep').classList.add('hidden');
+                    document.getElementById('modeStep').classList.remove('hidden');
+                    document.getElementById('saveFeedback').textContent = '';
+                    if (document.pointerLockElement) document.exitPointerLock();
+                }, 0);
             });
         }
 
@@ -982,6 +1139,7 @@
             equipmentReturnState = gameState;
             gameState = 'MENU';
             document.getElementById('pauseScreen').classList.add('hidden');
+            document.getElementById('mobileControls').classList.remove('active');
             document.getElementById('equipmentScreen').classList.remove('hidden');
             document.getElementById('inventorySection').classList.toggle('hidden', view === 'store');
             document.getElementById('storeSection').classList.toggle('hidden', view !== 'store');
@@ -995,8 +1153,9 @@
             gameState = equipmentReturnState;
             if (gameState === 'PAUSED') {
                 document.getElementById('pauseScreen').classList.remove('hidden');
-            } else if (!isPhoneDevice) {
-                document.body.requestPointerLock();
+            } else {
+                document.getElementById('mobileControls').classList.toggle('active', selectedPlatform === 'MOBILE');
+                if (selectedPlatform === 'WINDOWS') document.body.requestPointerLock();
             }
         }
 
@@ -1534,6 +1693,7 @@
             if (gameState !== 'PLAYING') return;
             gameState = 'PAUSED';
             document.getElementById('pauseScreen').classList.remove('hidden');
+            document.getElementById('mobileControls').classList.remove('active');
             if (document.pointerLockElement) document.exitPointerLock();
         }
 
@@ -1542,7 +1702,8 @@
             if (gameState !== 'PAUSED') return;
             document.getElementById('pauseScreen').classList.add('hidden');
             gameState = 'PLAYING';
-            if (!isPhoneDevice) document.body.requestPointerLock();
+            document.getElementById('mobileControls').classList.toggle('active', selectedPlatform === 'MOBILE');
+            if (selectedPlatform === 'WINDOWS') document.body.requestPointerLock();
         }
 
 
@@ -1624,7 +1785,8 @@
             document.getElementById('gameOverScreen').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
             gameState = 'PLAYING';
-            if (!isPhoneDevice) document.body.requestPointerLock();
+            document.getElementById('mobileControls').classList.toggle('active', selectedPlatform === 'MOBILE');
+            if (selectedPlatform === 'WINDOWS') document.body.requestPointerLock();
         }
 
         function saveGame() {
@@ -1677,23 +1839,22 @@
 
         function exitGame() {
             if (document.pointerLockElement) document.exitPointerLock();
+            document.getElementById('mobileControls').classList.remove('active');
             gameState = 'START';
             document.getElementById('hud').classList.add('hidden');
             document.getElementById('pauseScreen').classList.add('hidden');
             document.getElementById('equipmentScreen').classList.add('hidden');
             document.getElementById('gameOverScreen').classList.add('hidden');
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('deviceSelectionScreen').classList.add('hidden');
             document.getElementById('startScreen').classList.remove('hidden');
-            isMouseDown = false;
-            player.isADS = false;
-            document.getElementById('adsOverlay').style.display = 'none';
-            document.getElementById('startFeedback').textContent = 'Back at the main menu. Choose a mode or switch device.';
+            document.getElementById('modeStep').classList.add('hidden');
+            document.getElementById('platformStep').classList.remove('hidden');
+            document.getElementById('startFeedback').textContent = 'Game exited. Choose a platform to play again.';
         }
 
 
         function gameOver() {
             gameState = 'GAMEOVER';
+            document.getElementById('mobileControls').classList.remove('active');
             document.getElementById('pauseScreen').classList.add('hidden');
             document.getElementById('hud').classList.add('hidden');
             document.getElementById('gameOverScreen').classList.remove('hidden');
@@ -1749,7 +1910,8 @@
                 }
 
                 // Sprinting & Stamina
-                let isSprinting = (keys['ShiftLeft'] || keys['ShiftRight']) && (keys['KeyW'] || keys['KeyA'] || keys['KeyS'] || keys['KeyD']) && !player.isADS;
+                let hasMoveInput = keys['KeyW'] || keys['KeyA'] || keys['KeyS'] || keys['KeyD'] || Math.abs(touchMoveX) > 0.08 || Math.abs(touchMoveY) > 0.08;
+                let isSprinting = ((keys['ShiftLeft'] || keys['ShiftRight']) || virtualSprint) && hasMoveInput && !player.isADS;
                 if (isSprinting && player.stamina > 0) {
                     player.isSprinting = true;
                     player.stamina = Math.max(0, player.stamina - dt * 35);
@@ -1767,6 +1929,8 @@
                 if (keys['KeyS'] || keys['ArrowDown']) moveDir.z += 1;
                 if (keys['KeyA'] || keys['ArrowLeft']) moveDir.x -= 1;
                 if (keys['KeyD'] || keys['ArrowRight']) moveDir.x += 1;
+                moveDir.x += touchMoveX;
+                moveDir.z += touchMoveY;
                 moveDir.normalize();
 
 
@@ -2041,311 +2205,12 @@
         }
 
 
-        function setupTouchControls() {
-            const movePad = document.getElementById('movePad');
-            const moveKnob = document.getElementById('moveKnob');
-            const lookPad = document.getElementById('lookPad');
-            let movePointer = null;
-            let lookPointer = null;
-            let lastLookX = 0;
-            let lastLookY = 0;
-
-            const resetMovement = () => {
-                ['KeyW', 'KeyA', 'KeyS', 'KeyD'].forEach(code => { keys[code] = false; });
-                moveKnob.style.transform = 'translate(0, 0)';
-            };
-            const updateMovement = event => {
-                const rect = movePad.getBoundingClientRect();
-                const maxRadius = rect.width * 0.31;
-                const dx = event.clientX - (rect.left + rect.width / 2);
-                const dy = event.clientY - (rect.top + rect.height / 2);
-                const length = Math.hypot(dx, dy) || 1;
-                const scale = Math.min(1, maxRadius / length);
-                const x = dx * scale;
-                const y = dy * scale;
-                moveKnob.style.transform = `translate(${x}px, ${y}px)`;
-                keys.KeyA = x < -12;
-                keys.KeyD = x > 12;
-                keys.KeyW = y < -12;
-                keys.KeyS = y > 12;
-            };
-
-            movePad.addEventListener('pointerdown', event => {
-                event.preventDefault();
-                movePointer = event.pointerId;
-                movePad.setPointerCapture(movePointer);
-                updateMovement(event);
-            });
-            movePad.addEventListener('pointermove', event => {
-                if (event.pointerId === movePointer) updateMovement(event);
-            });
-            ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => {
-                movePad.addEventListener(type, event => {
-                    if (event.pointerId !== movePointer) return;
-                    movePointer = null;
-                    resetMovement();
-                });
-            });
-
-            lookPad.addEventListener('pointerdown', event => {
-                if (gameState !== 'PLAYING') return;
-                event.preventDefault();
-                lookPointer = event.pointerId;
-                lastLookX = event.clientX;
-                lastLookY = event.clientY;
-                lookPad.setPointerCapture(lookPointer);
-            });
-            lookPad.addEventListener('pointermove', event => {
-                if (event.pointerId !== lookPointer || gameState !== 'PLAYING') return;
-                event.preventDefault();
-                mouseX -= (event.clientX - lastLookX) * 0.006;
-                mouseY = Math.max(-1.2, Math.min(1.2, mouseY - (event.clientY - lastLookY) * 0.006));
-                lastLookX = event.clientX;
-                lastLookY = event.clientY;
-            });
-            ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => {
-                lookPad.addEventListener(type, event => {
-                    if (event.pointerId === lookPointer) lookPointer = null;
-                });
-            });
-
-            const bindHold = (id, start, stop) => {
-                const button = document.getElementById(id);
-                button.addEventListener('pointerdown', event => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    button.setPointerCapture(event.pointerId);
-                    start();
-                });
-                ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => button.addEventListener(type, event => {
-                    event.preventDefault();
-                    stop();
-                }));
-            };
-            bindHold('touchFire', () => { isMouseDown = true; }, () => { isMouseDown = false; });
-            bindHold('touchAds', () => {
-                player.isADS = true;
-                document.getElementById('adsOverlay').style.display = 'flex';
-            }, () => {
-                player.isADS = false;
-                document.getElementById('adsOverlay').style.display = 'none';
-            });
-            bindHold('touchSprint', () => { keys.ShiftLeft = true; }, () => { keys.ShiftLeft = false; });
-            document.getElementById('touchJump').addEventListener('pointerdown', event => {
-                event.preventDefault();
-                event.stopPropagation();
-                if (gameState === 'PLAYING' && jumpHeight <= 0) jumpVelocity = 7;
-            });
-            document.getElementById('touchReload').addEventListener('pointerdown', event => {
-                event.preventDefault();
-                event.stopPropagation();
-                reloadWeapon();
-            });
-        }
-
-        setupTouchControls();
-        document.querySelectorAll('[data-device]').forEach(button => {
-            button.addEventListener('click', () => {
-                isPhoneDevice = button.dataset.device === 'phone';
-                document.body.classList.toggle('phone-mode', isPhoneDevice);
-                document.getElementById('deviceSelectionScreen').classList.add('hidden');
-                document.getElementById('chosenDeviceLabel').textContent = isPhoneDevice ? 'Phone' : 'Windows';
-                document.getElementById('loginFeedback').textContent = isPhoneDevice
-                    ? 'Phone selected. Sign in to continue with touch controls.'
-                    : 'Windows selected. Sign in to continue with keyboard and mouse.';
-                document.getElementById('loginScreen').classList.remove('hidden');
-                document.getElementById('loginEmail').focus();
-            });
+        document.getElementById('windowsModeButton').addEventListener('click', () => choosePlatform('WINDOWS'));
+        document.getElementById('mobileModeButton').addEventListener('click', () => choosePlatform('MOBILE'));
+        document.getElementById('backToPlatformButton').addEventListener('click', () => {
+            document.getElementById('modeStep').classList.add('hidden');
+            document.getElementById('platformStep').classList.remove('hidden');
         });
-
-        const ACCOUNTS_KEY = 'dawnSurvivorAccounts';
-        let currentAccount = null;
-
-        function getAccounts() {
-            try {
-                const accounts = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]');
-                return Array.isArray(accounts) ? accounts : [];
-            } catch (error) {
-                return [];
-            }
-        }
-
-        function saveAccounts(accounts) {
-            localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-        }
-
-        function createSalt() {
-            const bytes = new Uint8Array(16);
-            crypto.getRandomValues(bytes);
-            return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
-        }
-
-        async function hashPassword(password, salt) {
-            if (!window.crypto || !crypto.subtle) throw new Error('Secure password storage is unavailable in this browser.');
-            const keyMaterial = await crypto.subtle.importKey(
-                'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']
-            );
-            const derivedBits = await crypto.subtle.deriveBits({
-                name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations: 120000, hash: 'SHA-256'
-            }, keyMaterial, 256);
-            return Array.from(new Uint8Array(derivedBits), byte => byte.toString(16).padStart(2, '0')).join('');
-        }
-
-        function setAuthMode(mode) {
-            const registering = mode === 'register';
-            document.getElementById('loginForm').classList.toggle('hidden', registering);
-            document.getElementById('registerForm').classList.toggle('hidden', !registering);
-            document.getElementById('loginTitle').textContent = registering ? 'Create your account' : 'Welcome back';
-            document.querySelectorAll('[data-auth-mode]').forEach(tab => {
-                const active = tab.dataset.authMode === mode;
-                tab.classList.toggle('active', active);
-                tab.setAttribute('aria-selected', String(active));
-            });
-            document.getElementById('loginFeedback').textContent = '';
-        }
-
-        function enterMainMenu(account, message) {
-            currentAccount = account;
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('startScreen').classList.remove('hidden');
-            document.getElementById('accountSummary').classList.remove('hidden');
-            document.getElementById('menuAccountName').textContent = account.name;
-            document.getElementById('startFeedback').textContent = message;
-        }
-
-        function showAccountPreview() {
-            if (!currentAccount) return;
-            document.getElementById('previewName').textContent = currentAccount.name;
-            document.getElementById('previewEmail').textContent = currentAccount.email;
-            document.getElementById('previewDevice').textContent = isPhoneDevice ? 'Phone' : 'Windows';
-            document.getElementById('previewCreated').textContent = new Date(currentAccount.createdAt).toLocaleDateString();
-            document.getElementById('editAccountName').value = currentAccount.name;
-            document.getElementById('editAccountEmail').value = currentAccount.email;
-            document.getElementById('profileFeedback').textContent = '';
-            document.getElementById('editAccountForm').classList.add('hidden');
-            document.getElementById('accountPreviewScreen').classList.remove('hidden');
-        }
-
-        document.querySelectorAll('[data-auth-mode]').forEach(tab => {
-            tab.addEventListener('click', () => setAuthMode(tab.dataset.authMode));
-        });
-
-        document.getElementById('loginForm').addEventListener('submit', async event => {
-            event.preventDefault();
-            const feedback = document.getElementById('loginFeedback');
-            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-            const password = document.getElementById('loginPassword').value;
-            const account = getAccounts().find(saved => saved.email === email);
-            if (!account) {
-                feedback.textContent = 'No account found for that email. Create an account first.';
-                return;
-            }
-            try {
-                const enteredHash = await hashPassword(password, account.salt);
-                if (enteredHash !== account.passwordHash) {
-                    feedback.textContent = 'That password does not match this account.';
-                    return;
-                }
-                enterMainMenu(account, `Signed in as ${account.email}. Select a game mode to begin.`);
-                document.getElementById('loginPassword').value = '';
-            } catch (error) {
-                feedback.textContent = error.message || 'Unable to sign in on this browser.';
-            }
-        });
-
-        document.getElementById('registerForm').addEventListener('submit', async event => {
-            event.preventDefault();
-            const feedback = document.getElementById('loginFeedback');
-            const name = document.getElementById('registerName').value.trim();
-            const email = document.getElementById('registerEmail').value.trim().toLowerCase();
-            const password = document.getElementById('registerPassword').value;
-            const confirmation = document.getElementById('registerConfirmPassword').value;
-            if (password.length < 6) {
-                feedback.textContent = 'Choose a password with at least 6 characters.';
-                return;
-            }
-            if (password !== confirmation) {
-                feedback.textContent = 'The passwords do not match.';
-                return;
-            }
-            const accounts = getAccounts();
-            if (accounts.some(account => account.email === email)) {
-                feedback.textContent = 'An account with that email already exists. Sign in instead.';
-                return;
-            }
-            try {
-                const salt = createSalt();
-                const account = {
-                    name,
-                    email,
-                    salt,
-                    passwordHash: await hashPassword(password, salt),
-                    createdAt: new Date().toISOString()
-                };
-                accounts.push(account);
-                saveAccounts(accounts);
-                document.getElementById('registerForm').reset();
-                enterMainMenu(account, `Account created for ${account.email}. Welcome, ${account.name}!`);
-            } catch (error) {
-                feedback.textContent = error.message || 'Unable to save this account in browser storage.';
-            }
-        });
-
-        document.getElementById('accountPreviewButton').addEventListener('click', showAccountPreview);
-        document.getElementById('closeAccountPreview').addEventListener('click', () => {
-            document.getElementById('accountPreviewScreen').classList.add('hidden');
-        });
-        document.getElementById('accountPreviewScreen').addEventListener('click', event => {
-            if (event.target.id === 'accountPreviewScreen') event.currentTarget.classList.add('hidden');
-        });
-        document.getElementById('editAccountButton').addEventListener('click', () => {
-            document.getElementById('editAccountForm').classList.toggle('hidden');
-        });
-        document.getElementById('editAccountForm').addEventListener('submit', event => {
-            event.preventDefault();
-            if (!currentAccount) return;
-            const name = document.getElementById('editAccountName').value.trim();
-            const email = document.getElementById('editAccountEmail').value.trim().toLowerCase();
-            const accounts = getAccounts();
-            if (accounts.some(account => account.email === email && account.email !== currentAccount.email)) {
-                document.getElementById('profileFeedback').textContent = 'That email is already used by another account.';
-                return;
-            }
-            const accountIndex = accounts.findIndex(account => account.email === currentAccount.email);
-            if (accountIndex < 0) return;
-            accounts[accountIndex] = { ...accounts[accountIndex], name, email };
-            try {
-                saveAccounts(accounts);
-                currentAccount = accounts[accountIndex];
-                document.getElementById('menuAccountName').textContent = name;
-                document.getElementById('previewName').textContent = name;
-                document.getElementById('previewEmail').textContent = email;
-                document.getElementById('profileFeedback').textContent = 'Profile saved in this browser.';
-            } catch (error) {
-                document.getElementById('profileFeedback').textContent = 'Unable to save profile changes.';
-            }
-        });
-        document.getElementById('signOutButton').addEventListener('click', () => {
-            currentAccount = null;
-            document.getElementById('accountPreviewScreen').classList.add('hidden');
-            document.getElementById('startScreen').classList.add('hidden');
-            document.getElementById('accountSummary').classList.add('hidden');
-            document.getElementById('loginEmail').value = '';
-            document.getElementById('loginPassword').value = '';
-            setAuthMode('login');
-            document.getElementById('loginScreen').classList.remove('hidden');
-        });
-
-        document.getElementById('backToDeviceButton').addEventListener('click', () => {
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('deviceSelectionScreen').classList.remove('hidden');
-        });
-
-        document.getElementById('changeDeviceButton').addEventListener('click', () => {
-            document.getElementById('startScreen').classList.add('hidden');
-            document.getElementById('deviceSelectionScreen').classList.remove('hidden');
-        });
-
         document.getElementById('startButton').addEventListener('click', () => startGame('STORY'));
         document.getElementById('careerButton').addEventListener('click', () => startGame('CAREER'));
         document.getElementById('loadGameButton').addEventListener('click', loadSavedGame);
