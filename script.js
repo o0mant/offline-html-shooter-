@@ -100,46 +100,66 @@
     }
 })();
 
-// Offer the browser's native install prompt when this site is eligible as a PWA.
+// Provide separate, platform-specific PWA installation guidance.
 (() => {
-    const button = document.getElementById('installAppButton');
+    const androidButton = document.getElementById('installAndroidButton');
+    const iosButton = document.getElementById('installIOSButton');
     const feedback = document.getElementById('installAppFeedback');
-    if (!button || !feedback) return;
+    if (!androidButton || !iosButton || !feedback) return;
 
     let installPrompt = null;
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isStandalone = navigator.standalone === true
+        || window.matchMedia('(display-mode: standalone)').matches;
+
     window.addEventListener('beforeinstallprompt', event => {
         event.preventDefault();
         installPrompt = event;
-        button.textContent = 'INSTALL GAME ON PHONE';
     });
 
-    button.addEventListener('click', async () => {
-        if (installPrompt) {
-            installPrompt.prompt();
-            const choice = await installPrompt.userChoice;
-            feedback.textContent = choice.outcome === 'accepted'
-                ? 'Install started. Find XC Shooter on your home screen.'
-                : 'Install cancelled. You can try again whenever you like.';
-            installPrompt = null;
+    androidButton.addEventListener('click', async () => {
+        if (isStandalone) {
+            feedback.textContent = 'XC Shooter is already installed. Launch it from your Home Screen or app list.';
             return;
         }
 
-        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-        feedback.textContent = isIOS
-            ? 'In Safari, tap Share, then Add to Home Screen.'
-            : 'Open this game in Chrome, tap ⋮, then choose Install app or Add to Home screen. The site must be hosted over HTTPS.';
+        if (installPrompt) {
+            try {
+                installPrompt.prompt();
+                const choice = await installPrompt.userChoice;
+                feedback.textContent = choice.outcome === 'accepted'
+                    ? 'Install started. Find XC Shooter on your Home Screen or in your app list.'
+                    : 'Install cancelled. You can try again whenever you like.';
+            } catch (error) {
+                feedback.textContent = 'Open this game in Chrome or another supported Android browser, then use its menu to install the app.';
+            } finally {
+                installPrompt = null;
+            }
+            return;
+        }
+
+        feedback.textContent = 'Android: open this page in Chrome, tap ⋮, then choose Install app or Add to Home screen. Secure HTTPS hosting is required.';
+    });
+
+    iosButton.addEventListener('click', () => {
+        if (isIOS && isStandalone) {
+            feedback.textContent = 'XC Shooter is already installed. Launch it from your Home Screen.';
+        } else {
+            feedback.textContent = 'iPhone/iPad: open this page in Safari, tap Share, then Add to Home Screen. Secure HTTPS hosting is required.';
+        }
     });
 
     window.addEventListener('appinstalled', () => {
-        feedback.textContent = 'XC Shooter was added to your device.';
-        button.textContent = 'GAME INSTALLED';
-        button.disabled = true;
+        feedback.textContent = 'XC Shooter was installed. Find it on your Home Screen or in your app list.';
+        androidButton.textContent = 'ANDROID APP INSTALLED';
+        androidButton.disabled = true;
     });
 
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./service-worker.js').catch(() => {
-                feedback.textContent = 'App install is available when this game is hosted securely over HTTPS.';
+                feedback.textContent = 'Installation needs secure HTTPS hosting. Please check this site connection.';
             });
         }, { once: true });
     }
