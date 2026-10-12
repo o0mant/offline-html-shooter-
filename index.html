@@ -316,6 +316,11 @@
                 <section id="storeSection" class="bg-slate-950/70 border border-amber-900/70 rounded-xl p-4">
                     <h3 class="text-lg font-bold text-amber-300 mb-3">WEAPON STORE</h3>
                     <div id="storeList" class="grid sm:grid-cols-2 gap-3"></div>
+                    <div class="optic-store-grid" aria-label="Weapon optics">
+                        <button id="buyCarbineOpticButton" class="optic-store-button" type="button">BUY 2× CARBINE OPTIC <span>300 points</span><small>Compatible with the Scout Carbine only</small></button>
+                        <button id="buySniperScopeButton" class="optic-store-button sniper-optic" type="button">BUY 4× SNIPER SCOPE <span>500 points</span><small>Compatible with the AX-50 Sniper Rifle only</small></button>
+                    </div>
+                    <p id="opticStoreFeedback" class="mt-2 min-h-5 text-xs text-slate-400" role="status" aria-live="polite"></p>
                     <button id="buyAmmoButton" class="w-full mt-3 p-3 rounded-lg border border-emerald-700 bg-emerald-950/70 hover:bg-emerald-900 text-left text-emerald-200" type="button">Buy +60 reserve ammo <span class="float-right font-bold">100 points</span></button>
                 </section>
             </div>
@@ -466,6 +471,8 @@
             PISTOL: 250, SMG: 400, SHOTGUN: 450, MACHINEGUN: 500,
             CARBINE: 600, BURST: 650, SNIPER: 700, REVOLVER: 800
         };
+        const OPTIC_PRICES = { CARBINE: 300, SNIPER: 500 };
+        let ownedOptics = new Set();
         let jumpHeight = 0;
         let jumpVelocity = 0;
 
@@ -662,6 +669,8 @@
 
                     // Keep each player's saved match separate in this browser.
                     SAVE_KEY = `dawnSurvivorSave:${encodeURIComponent(signedInAccount.email)}`;
+                    loadOwnedOptics();
+                    buildWeaponMesh();
                     passwordInput.value = '';
                     document.getElementById('accountScreen').classList.add('hidden');
                     document.getElementById('startScreen').classList.remove('hidden');
@@ -751,10 +760,7 @@
                     button.setPointerCapture(event.pointerId);
                     const action = button.dataset.touch;
                     if (action === 'fire') isMouseDown = true;
-                    if (action === 'ads') {
-                        player.isADS = true;
-                        document.getElementById('adsOverlay').style.display = 'flex';
-                    }
+                    if (action === 'ads') setADS(true);
                     if (action === 'sprint') virtualSprint = true;
                     if (action === 'jump' && gameState === 'PLAYING' && jumpHeight <= 0) jumpVelocity = 7;
                     if (action === 'reload') reloadWeapon();
@@ -762,16 +768,90 @@
                 });
                 const releaseAction = () => {
                     if (button.dataset.touch === 'fire') isMouseDown = false;
-                    if (button.dataset.touch === 'ads') {
-                        player.isADS = false;
-                        document.getElementById('adsOverlay').style.display = 'none';
-                    }
+                    if (button.dataset.touch === 'ads') setADS(false);
                     if (button.dataset.touch === 'sprint') virtualSprint = false;
                 };
                 button.addEventListener('pointerup', releaseAction);
                 button.addEventListener('pointercancel', releaseAction);
                 button.addEventListener('lostpointercapture', releaseAction);
             });
+        }
+
+        function hasOpticForWeapon(weaponKey) {
+            return (weaponKey === 'CARBINE' || weaponKey === 'SNIPER') && ownedOptics.has(weaponKey);
+        }
+
+        function setADS(active) {
+            player.isADS = active;
+            const scoped = active && hasOpticForWeapon(player.currentWeaponKey);
+            document.getElementById('adsOverlay').style.display = scoped ? 'flex' : 'none';
+            if (camera) {
+                camera.fov = active ? (scoped ? (player.currentWeaponKey === 'SNIPER' ? 19 : 38) : 62) : 75;
+                camera.updateProjectionMatrix();
+            }
+        }
+
+        function persistOwnedOptics() {
+            try {
+                localStorage.setItem(`${SAVE_KEY}:optics`, JSON.stringify(Array.from(ownedOptics)));
+            } catch (error) {
+                document.getElementById('opticStoreFeedback').textContent = 'Could not save optic ownership in this browser.';
+            }
+        }
+
+        function loadOwnedOptics() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(`${SAVE_KEY}:optics`) || '[]');
+                ownedOptics = new Set(Array.isArray(saved) ? saved.filter(key => Object.prototype.hasOwnProperty.call(OPTIC_PRICES, key)) : []);
+            } catch (error) {
+                ownedOptics = new Set();
+            }
+            refreshOpticStoreButtons();
+        }
+
+        function refreshOpticStoreButtons() {
+            const optics = [
+                ['CARBINE', 'buyCarbineOpticButton', '2× CARBINE OPTIC'],
+                ['SNIPER', 'buySniperScopeButton', '4× SNIPER SCOPE']
+            ];
+            optics.forEach(([weaponKey, buttonId, name]) => {
+                const button = document.getElementById(buttonId);
+                if (!button) return;
+                const weaponName = weaponKey === 'CARBINE' ? 'the Scout Carbine' : 'the AX-50 Sniper Rifle';
+                button.disabled = ownedOptics.has(weaponKey);
+                if (button.disabled) {
+                    button.innerHTML = `${name} OWNED <span>Purchased</span><small>Compatible with ${weaponName} only</small>`;
+                } else {
+                    button.innerHTML = `BUY ${name} <span>${OPTIC_PRICES[weaponKey]} points</span><small>Compatible with ${weaponName} only</small>`;
+                }
+            });
+        }
+
+        function setupOpticStore() {
+            const feedback = document.getElementById('opticStoreFeedback');
+            const configure = (weaponKey, buttonId, name) => {
+                const button = document.getElementById(buttonId);
+                button.addEventListener('click', () => {
+                    if (ownedOptics.has(weaponKey)) return;
+                    if (points < OPTIC_PRICES[weaponKey]) {
+                        feedback.textContent = `Not enough points for the ${name}.`;
+                        return;
+                    }
+                    points -= OPTIC_PRICES[weaponKey];
+                    ownedOptics.add(weaponKey);
+                    persistOwnedOptics();
+                    feedback.textContent = `${name} purchased. Equip the compatible weapon and aim down sights.`;
+                    refreshOpticStoreButtons();
+                    const pointsLabel = document.getElementById('storePoints');
+                    if (pointsLabel) pointsLabel.textContent = points;
+                    const pointsDisplay = document.getElementById('pointsDisplay');
+                    if (pointsDisplay) pointsDisplay.textContent = points;
+                    if (player.currentWeaponKey === weaponKey) buildWeaponMesh();
+                });
+            };
+            configure('CARBINE', 'buyCarbineOpticButton', '2× CARBINE OPTIC');
+            configure('SNIPER', 'buySniperScopeButton', '4× SNIPER SCOPE');
+            refreshOpticStoreButtons();
         }
 
         function init() {
@@ -940,8 +1020,7 @@
                     if (e.button === 0) isMouseDown = true;
                     if (e.button === 2) {
                         isRightMouseDown = true;
-                        player.isADS = true;
-                        document.getElementById('adsOverlay').style.display = 'flex';
+                        setADS(true);
                     }
                 }
             });
@@ -951,8 +1030,7 @@
                 if (e.button === 0) isMouseDown = false;
                 if (e.button === 2) {
                     isRightMouseDown = false;
-                    player.isADS = false;
-                    document.getElementById('adsOverlay').style.display = 'none';
+                    setADS(false);
                 }
             });
 
@@ -962,6 +1040,7 @@
                 if (selectedPlatform === 'WINDOWS' && gameState === 'PLAYING' && document.pointerLockElement !== document.body) pauseGame();
             });
             setupTouchControls();
+            setupOpticStore();
             setupAccountAuth();
 
             // Save normally through the existing handler, then return to mode selection.
@@ -1067,13 +1146,24 @@
             weaponMeshGroup.add(barrelMesh);
 
 
-            if(player.currentWeaponKey === 'SNIPER') {
-                const scopeGeo = new THREE.BoxGeometry(0.05, 0.07, 0.2);
-                const scopeMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 });
+            if (hasOpticForWeapon(player.currentWeaponKey)) {
+                const scopeLength = player.currentWeaponKey === 'SNIPER' ? 0.34 : 0.24;
+                const scopeGeo = new THREE.CylinderGeometry(0.045, 0.045, scopeLength, 16);
+                scopeGeo.rotateX(Math.PI / 2);
+                const scopeMat = new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.88, roughness: 0.28 });
                 const scopeMesh = new THREE.Mesh(scopeGeo, scopeMat);
-                scopeMesh.position.set(0.25, -0.14, -0.5);
+                scopeMesh.position.set(0.25, -0.12, -0.51);
                 weaponMeshGroup.add(scopeMesh);
+                for (const zOffset of [-0.11, 0.11]) {
+                    const ring = new THREE.Mesh(
+                        new THREE.TorusGeometry(0.052, 0.009, 8, 20),
+                        new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9, roughness: 0.25 })
+                    );
+                    ring.position.set(0.25, -0.12, -0.51 + zOffset);
+                    weaponMeshGroup.add(ring);
+                }
             }
+            if (player.isADS) setADS(true);
         }
 
 
