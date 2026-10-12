@@ -1173,10 +1173,17 @@ button:focus-visible {
   .combat-notice-show { animation-duration: 0.01ms; }
 }
 
+.install-app-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
 .install-app-button {
   width: 100%;
   min-height: 44px;
-  margin-top: 0.65rem;
+  margin-top: 0;
   padding: 0.65rem 0.9rem;
   border: 1px solid rgba(251, 191, 36, 0.55);
   border-radius: 0.7rem;
