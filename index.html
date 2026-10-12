@@ -102,8 +102,8 @@
 
         /* Minimap Canvas */
         #minimapCanvas {
-            width: 130px;
-            height: 130px;
+            width: 160px;
+            height: 160px;
             background: rgba(15, 23, 42, 0.85);
             border: 2px solid rgba(56, 189, 248, 0.4);
             border-radius: 50%;
@@ -284,7 +284,8 @@
                 <div class="bg-slate-900/85 border border-slate-700 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider text-sky-200">Weather: <span id="weatherDisplay">Clear</span></div>
                 <div class="flex flex-col items-center bg-slate-900/85 backdrop-blur border border-slate-800 p-3 rounded-2xl shadow-xl">
                 <div class="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-2">Sunrise Radar</div>
-                <canvas id="minimapCanvas" width="130" height="130"></canvas>
+                <canvas id="minimapCanvas" width="220" height="220" aria-label="Detailed radar showing the player, zombies, vehicle, buildings, and salvage parts"></canvas>
+                <div class="minimap-legend"><span><i class="legend-player"></i>YOU</span><span><i class="legend-zombie"></i>HOSTILE</span><span><i class="legend-part"></i>PART</span></div>
                 </div>
             </div>
         </div>
@@ -369,16 +370,7 @@
             </form>
             <p id="accountFeedback" class="account-feedback" role="status" aria-live="polite"></p>
             <button id="accountSwitch" class="account-switch" type="button">New here? Create an account</button>
-            <section class="account-sharing" aria-label="Share accounts with friends">
-                <strong>SHARE ACCOUNTS WITH FRIENDS</strong>
-                <p>Export this browser’s account list and send the file to friends. They can import it on their device.</p>
-                <div class="account-sharing-actions">
-                    <button id="exportAccountsButton" class="account-share-button" type="button">EXPORT ACCOUNTS</button>
-                    <button id="importAccountsButton" class="account-share-button" type="button">IMPORT ACCOUNTS</button>
-                </div>
-                <input id="importAccountsFile" type="file" accept="application/json,.json" hidden>
-                <p id="accountSharingFeedback" role="status" aria-live="polite"></p>
-            </section>
+            <button id="playAsGuestButton" class="account-guest-button" type="button">PLAY AS GUEST</button>
             <div class="install-app-options" role="group" aria-label="Choose your phone platform">
                 <button id="installAndroidButton" class="install-app-button" type="button">INSTALL ON ANDROID</button>
                 <button id="installIOSButton" class="install-app-button" type="button">INSTALL ON iOS</button>
@@ -661,6 +653,23 @@
                 }));
         }
 
+        function enterPlatformSelection(saveKey) {
+            SAVE_KEY = saveKey;
+            loadOwnedOptics();
+            loadOwnedAddons();
+            buildWeaponMesh();
+            document.getElementById('accountScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+            document.getElementById('platformStep').classList.remove('hidden');
+            document.getElementById('modeStep').classList.add('hidden');
+            document.getElementById('platformHint').textContent = 'Select a platform to continue';
+            selectedPlatform = 'WINDOWS';
+            document.getElementById('windowsModeButton').classList.remove('selected');
+            document.getElementById('mobileModeButton').classList.remove('selected');
+            document.getElementById('windowsModeButton').setAttribute('aria-pressed', 'false');
+            document.getElementById('mobileModeButton').setAttribute('aria-pressed', 'false');
+        }
+
         function setAccountMode(mode) {
             accountMode = mode;
             const signup = mode === 'signup';
@@ -744,21 +753,8 @@
                     }
 
                     // Keep each player's saved match separate in this browser.
-                    SAVE_KEY = `dawnSurvivorSave:${encodeURIComponent(signedInAccount.email)}`;
-                    loadOwnedOptics();
-                    loadOwnedAddons();
-                    buildWeaponMesh();
                     passwordInput.value = '';
-                    document.getElementById('accountScreen').classList.add('hidden');
-                    document.getElementById('startScreen').classList.remove('hidden');
-                    document.getElementById('platformStep').classList.remove('hidden');
-                    document.getElementById('modeStep').classList.add('hidden');
-                    document.getElementById('platformHint').textContent = 'Select a platform to continue';
-                    selectedPlatform = 'WINDOWS';
-                    document.getElementById('windowsModeButton').classList.remove('selected');
-                    document.getElementById('mobileModeButton').classList.remove('selected');
-                    document.getElementById('windowsModeButton').setAttribute('aria-pressed', 'false');
-                    document.getElementById('mobileModeButton').setAttribute('aria-pressed', 'false');
+                    enterPlatformSelection(`dawnSurvivorSave:${encodeURIComponent(signedInAccount.email)}`);
                 } catch (error) {
                     feedback.textContent = 'Could not save account or game data in this browser. Check browser storage settings.';
                 } finally {
@@ -767,70 +763,11 @@
             });
         }
 
-        function setupAccountSharing() {
-            const exportButton = document.getElementById('exportAccountsButton');
-            const importButton = document.getElementById('importAccountsButton');
-            const fileInput = document.getElementById('importAccountsFile');
-            const feedback = document.getElementById('accountSharingFeedback');
-            if (!exportButton || !importButton || !fileInput || exportButton.dataset.ready === 'true') return;
-            exportButton.dataset.ready = 'true';
-
-            exportButton.addEventListener('click', () => {
-                try {
-                    const file = new Blob([JSON.stringify({ format: 'xc-shooter-accounts-v1', accounts: readAccounts() }, null, 2)], { type: 'application/json' });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(file);
-                    link.download = 'xc-shooter-accounts.json';
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-                    feedback.textContent = 'Account file downloaded. Send it to your friends so they can import the accounts.';
-                } catch (error) {
-                    feedback.textContent = 'Could not export accounts in this browser.';
-                }
-            });
-
-            importButton.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', async () => {
-                const file = fileInput.files && fileInput.files[0];
-                if (!file) return;
-                try {
-                    const data = JSON.parse(await file.text());
-                    if (data.format !== 'xc-shooter-accounts-v1' || !Array.isArray(data.accounts)) throw new Error('Invalid account file');
-                    const validAccounts = data.accounts.filter(account =>
-                        account && typeof account.email === 'string' && typeof account.username === 'string' &&
-                        typeof account.salt === 'string' && /^[a-f0-9]{32}$/i.test(account.salt) &&
-                        typeof account.hash === 'string' && /^[a-f0-9]{64}$/i.test(account.hash)
-                    );
-                    if (!validAccounts.length && data.accounts.length) throw new Error('No valid accounts');
-                    const accounts = readAccounts();
-                    let added = 0;
-                    validAccounts.forEach(account => {
-                        const email = account.email.toLowerCase();
-                        const username = account.username.toLowerCase();
-                        const exists = accounts.some(existing =>
-                            (typeof existing.email === 'string' && existing.email.toLowerCase() === email) ||
-                            (typeof existing.username === 'string' && existing.username.toLowerCase() === username)
-                        );
-                        if (!exists) {
-                            accounts.push({ name: String(account.name || ''), username, email, salt: account.salt, hash: account.hash });
-                            added++;
-                        }
-                    });
-                    localStorage.setItem(ACCOUNT_KEY, JSON.stringify(accounts));
-                    feedback.textContent = added ? `Imported ${added} account${added === 1 ? '' : 's'}. You can now sign in with them on this device.` : 'All accounts in that file are already on this device.';
-                } catch (error) {
-                    feedback.textContent = 'That account file is invalid or could not be imported.';
-                } finally {
-                    fileInput.value = '';
-                }
-            });
-        }
-
         // Register account controls as soon as their form is available.
         setupAccountAuth();
-        setupAccountSharing();
+        document.getElementById('playAsGuestButton').addEventListener('click', () => {
+            enterPlatformSelection('dawnSurvivorSave:guest');
+        });
 
         function setupTouchControls() {
             const joystick = document.getElementById('touchJoystick');
