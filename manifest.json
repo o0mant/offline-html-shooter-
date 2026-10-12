@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "XC Shooter - First-Person Survival",
+  "short_name": "XC Shooter",
+  "description": "Sunrise Tactical Outpost Simulator",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#030712",
+  "theme_color": "#030712",
+  "icons": [
+    {
+      "src": "app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
