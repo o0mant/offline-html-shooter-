@@ -355,6 +355,7 @@
             <p class="account-eyebrow">XC SHOOTER NETWORK</p>
             <h1 id="accountTitle">Welcome back</h1>
             <p id="accountDescription" class="account-description">Sign in to your survivor profile to continue to platform selection.</p>
+            <p class="account-notice">Accounts are saved only in this browser on this device. They do not sync between friends or devices; use a different username and email for each local profile, or choose PLAY AS GUEST.</p>
             <form id="accountForm" novalidate>
                 <label id="accountLoginLabel" for="accountLogin">Email or username</label>
                 <input id="accountLogin" name="login" type="text" autocomplete="username" required maxlength="254" placeholder="Email or username">
@@ -685,8 +686,8 @@
             toggleField('accountEmailLabel', 'accountSignupEmail', signup);
             document.getElementById('accountTitle').textContent = signup ? 'Join the survivors' : 'Welcome back';
             document.getElementById('accountDescription').textContent = signup
-                ? 'Create your survivor profile to secure your outpost and continue your mission.'
-                : 'Sign in with your email or username to continue to platform selection.';
+                ? 'Create a profile saved only in this browser. It will not sync to your friends’ devices.'
+                : 'Sign in with the email or username saved in this browser to continue.';
             document.querySelector('.account-card').classList.toggle('is-signup', signup);
             document.getElementById('accountSubmit').textContent = signup ? 'CREATE MY ACCOUNT' : 'SIGN IN';
             document.getElementById('accountSwitch').textContent = signup
@@ -725,11 +726,11 @@
                         const name = document.getElementById('accountName').value.trim();
                         const username = document.getElementById('accountUsername').value.trim().toLowerCase();
                         const email = document.getElementById('accountSignupEmail').value.trim().toLowerCase();
-                        const duplicate = accounts.find(account =>
-                            account.email === email || (account.username && account.username.toLowerCase() === username)
-                        );
-                        if (duplicate) {
-                            feedback.textContent = 'That email or username is already registered. Please sign in or choose another.';
+                        const emailExists = accounts.some(account => account.email === email);
+                        const usernameExists = accounts.some(account => account.username && account.username.toLowerCase() === username);
+                        if (emailExists || usernameExists) {
+                            const conflict = emailExists && usernameExists ? 'email and username' : emailExists ? 'email' : 'username';
+                            feedback.textContent = `That ${conflict} is already saved in this browser. Sign in to that local profile or choose a different one.`;
                             return;
                         }
                         const credentials = await hashAccountPassword(password);
