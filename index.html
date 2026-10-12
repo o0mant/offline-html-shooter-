@@ -331,15 +331,21 @@
             <h1 id="accountTitle">Welcome back</h1>
             <p id="accountDescription" class="account-description">Sign in to your survivor profile to continue to platform selection.</p>
             <form id="accountForm" novalidate>
-                <label for="accountEmail">Email address</label>
-                <input id="accountEmail" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com">
+                <label id="accountLoginLabel" for="accountLogin">Email or username</label>
+                <input id="accountLogin" name="login" type="text" autocomplete="username" required maxlength="254" placeholder="Email or username">
+                <label id="accountNameLabel" for="accountName" hidden>Full name</label>
+                <input id="accountName" name="name" type="text" autocomplete="name" maxlength="80" placeholder="Your name" hidden>
+                <label id="accountUsernameLabel" for="accountUsername" hidden>Username</label>
+                <input id="accountUsername" name="username" type="text" autocomplete="username" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]+" title="Use 3–20 letters, numbers, or underscores" placeholder="Choose a username" hidden>
+                <label id="accountEmailLabel" for="accountSignupEmail" hidden>Email address</label>
+                <input id="accountSignupEmail" name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com" hidden>
                 <label for="accountPassword">Password</label>
                 <input id="accountPassword" name="password" type="password" autocomplete="current-password" required minlength="8" placeholder="At least 8 characters">
                 <button id="accountSubmit" class="account-submit" type="submit">SIGN IN</button>
             </form>
             <p id="accountFeedback" class="account-feedback" role="status" aria-live="polite"></p>
             <button id="accountSwitch" class="account-switch" type="button">New here? Create an account</button>
-            <p class="account-notice">Demo accounts are saved only in this browser on this device. Do not use a real or reused password.</p>
+            <p class="account-notice">Profiles and game saves are stored locally in this browser and kept separate by account. This is not a shared online database; never use a real or reused password.</p>
         </section>
     </div>
 
@@ -448,7 +454,7 @@
         let touchMoveX = 0;
         let touchMoveY = 0;
         let virtualSprint = false;
-        const SAVE_KEY = 'dawnSurvivorSave';
+        let SAVE_KEY = 'dawnSurvivorSave';
         let keys = {};
         let ambientLight, sunLight, rainField;
         let weatherIndex = 0;
@@ -577,10 +583,20 @@
         function setAccountMode(mode) {
             accountMode = mode;
             const signup = mode === 'signup';
+            const toggleField = (labelId, inputId, visible) => {
+                document.getElementById(labelId).hidden = !visible;
+                const input = document.getElementById(inputId);
+                input.hidden = !visible;
+                input.required = visible;
+            };
+            toggleField('accountLoginLabel', 'accountLogin', !signup);
+            toggleField('accountNameLabel', 'accountName', signup);
+            toggleField('accountUsernameLabel', 'accountUsername', signup);
+            toggleField('accountEmailLabel', 'accountSignupEmail', signup);
             document.getElementById('accountTitle').textContent = signup ? 'Join the survivors' : 'Welcome back';
             document.getElementById('accountDescription').textContent = signup
                 ? 'Create your survivor profile to secure your outpost and continue your mission.'
-                : 'Sign in to your survivor profile to continue to platform selection.';
+                : 'Sign in with your email or username to continue to platform selection.';
             document.querySelector('.account-card').classList.toggle('is-signup', signup);
             document.getElementById('accountSubmit').textContent = signup ? 'CREATE MY ACCOUNT' : 'SIGN IN';
             document.getElementById('accountSwitch').textContent = signup
@@ -598,7 +614,6 @@
             form.addEventListener('submit', async event => {
                 event.preventDefault();
                 const feedback = document.getElementById('accountFeedback');
-                const email = document.getElementById('accountEmail').value.trim().toLowerCase();
                 const passwordInput = document.getElementById('accountPassword');
                 const password = passwordInput.value;
                 feedback.textContent = '';
@@ -609,31 +624,44 @@
                     return;
                 }
                 const accounts = readAccounts();
-                const existing = accounts.find(account => account.email === email);
                 const submit = document.getElementById('accountSubmit');
                 submit.disabled = true;
+                let signedInAccount;
 
                 try {
                     if (accountMode === 'signup') {
-                        if (existing) {
-                            feedback.textContent = 'An account with that email already exists. Sign in instead.';
+                        const name = document.getElementById('accountName').value.trim();
+                        const username = document.getElementById('accountUsername').value.trim().toLowerCase();
+                        const email = document.getElementById('accountSignupEmail').value.trim().toLowerCase();
+                        const duplicate = accounts.find(account =>
+                            account.email === email || (account.username && account.username.toLowerCase() === username)
+                        );
+                        if (duplicate) {
+                            feedback.textContent = 'That email or username is already registered. Please sign in or choose another.';
                             return;
                         }
                         const credentials = await hashAccountPassword(password);
-                        accounts.push({ email, salt: credentials.salt, hash: credentials.hash });
+                        signedInAccount = { name, username, email, salt: credentials.salt, hash: credentials.hash };
+                        accounts.push(signedInAccount);
                         localStorage.setItem(ACCOUNT_KEY, JSON.stringify(accounts));
                     } else {
-                        if (!existing) {
-                            feedback.textContent = 'Email or password is incorrect.';
+                        const identifier = document.getElementById('accountLogin').value.trim().toLowerCase();
+                        signedInAccount = accounts.find(account =>
+                            account.email === identifier || (account.username && account.username.toLowerCase() === identifier)
+                        );
+                        if (!signedInAccount) {
+                            feedback.textContent = 'Email/username or password is incorrect.';
                             return;
                         }
-                        const credentials = await hashAccountPassword(password, existing.salt);
-                        if (credentials.hash !== existing.hash) {
-                            feedback.textContent = 'Email or password is incorrect.';
+                        const credentials = await hashAccountPassword(password, signedInAccount.salt);
+                        if (credentials.hash !== signedInAccount.hash) {
+                            feedback.textContent = 'Email/username or password is incorrect.';
                             return;
                         }
                     }
 
+                    // Keep each player's saved match separate in this browser.
+                    SAVE_KEY = `dawnSurvivorSave:${encodeURIComponent(signedInAccount.email)}`;
                     passwordInput.value = '';
                     document.getElementById('accountScreen').classList.add('hidden');
                     document.getElementById('startScreen').classList.remove('hidden');
@@ -646,7 +674,7 @@
                     document.getElementById('windowsModeButton').setAttribute('aria-pressed', 'false');
                     document.getElementById('mobileModeButton').setAttribute('aria-pressed', 'false');
                 } catch (error) {
-                    feedback.textContent = 'Could not save account data in this browser. Check browser storage settings.';
+                    feedback.textContent = 'Could not save account or game data in this browser. Check browser storage settings.';
                 } finally {
                     submit.disabled = false;
                 }
