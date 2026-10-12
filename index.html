@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#030712">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="XC Shooter">
@@ -369,6 +369,16 @@
             </form>
             <p id="accountFeedback" class="account-feedback" role="status" aria-live="polite"></p>
             <button id="accountSwitch" class="account-switch" type="button">New here? Create an account</button>
+            <section class="account-sharing" aria-label="Share accounts with friends">
+                <strong>SHARE ACCOUNTS WITH FRIENDS</strong>
+                <p>Export this browser’s account list and send the file to friends. They can import it on their device.</p>
+                <div class="account-sharing-actions">
+                    <button id="exportAccountsButton" class="account-share-button" type="button">EXPORT ACCOUNTS</button>
+                    <button id="importAccountsButton" class="account-share-button" type="button">IMPORT ACCOUNTS</button>
+                </div>
+                <input id="importAccountsFile" type="file" accept="application/json,.json" hidden>
+                <p id="accountSharingFeedback" role="status" aria-live="polite"></p>
+            </section>
             <div class="install-app-options" role="group" aria-label="Choose your phone platform">
                 <button id="installAndroidButton" class="install-app-button" type="button">INSTALL ON ANDROID</button>
                 <button id="installIOSButton" class="install-app-button" type="button">INSTALL ON iOS</button>
@@ -679,6 +689,8 @@
 
         function setupAccountAuth() {
             const form = document.getElementById('accountForm');
+            if (!form || form.dataset.authReady === 'true') return;
+            form.dataset.authReady = 'true';
             document.getElementById('accountSwitch').addEventListener('click', () => {
                 setAccountMode(accountMode === 'login' ? 'signup' : 'login');
             });
@@ -754,6 +766,71 @@
                 }
             });
         }
+
+        function setupAccountSharing() {
+            const exportButton = document.getElementById('exportAccountsButton');
+            const importButton = document.getElementById('importAccountsButton');
+            const fileInput = document.getElementById('importAccountsFile');
+            const feedback = document.getElementById('accountSharingFeedback');
+            if (!exportButton || !importButton || !fileInput || exportButton.dataset.ready === 'true') return;
+            exportButton.dataset.ready = 'true';
+
+            exportButton.addEventListener('click', () => {
+                try {
+                    const file = new Blob([JSON.stringify({ format: 'xc-shooter-accounts-v1', accounts: readAccounts() }, null, 2)], { type: 'application/json' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(file);
+                    link.download = 'xc-shooter-accounts.json';
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+                    feedback.textContent = 'Account file downloaded. Send it to your friends so they can import the accounts.';
+                } catch (error) {
+                    feedback.textContent = 'Could not export accounts in this browser.';
+                }
+            });
+
+            importButton.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', async () => {
+                const file = fileInput.files && fileInput.files[0];
+                if (!file) return;
+                try {
+                    const data = JSON.parse(await file.text());
+                    if (data.format !== 'xc-shooter-accounts-v1' || !Array.isArray(data.accounts)) throw new Error('Invalid account file');
+                    const validAccounts = data.accounts.filter(account =>
+                        account && typeof account.email === 'string' && typeof account.username === 'string' &&
+                        typeof account.salt === 'string' && /^[a-f0-9]{32}$/i.test(account.salt) &&
+                        typeof account.hash === 'string' && /^[a-f0-9]{64}$/i.test(account.hash)
+                    );
+                    if (!validAccounts.length && data.accounts.length) throw new Error('No valid accounts');
+                    const accounts = readAccounts();
+                    let added = 0;
+                    validAccounts.forEach(account => {
+                        const email = account.email.toLowerCase();
+                        const username = account.username.toLowerCase();
+                        const exists = accounts.some(existing =>
+                            (typeof existing.email === 'string' && existing.email.toLowerCase() === email) ||
+                            (typeof existing.username === 'string' && existing.username.toLowerCase() === username)
+                        );
+                        if (!exists) {
+                            accounts.push({ name: String(account.name || ''), username, email, salt: account.salt, hash: account.hash });
+                            added++;
+                        }
+                    });
+                    localStorage.setItem(ACCOUNT_KEY, JSON.stringify(accounts));
+                    feedback.textContent = added ? `Imported ${added} account${added === 1 ? '' : 's'}. You can now sign in with them on this device.` : 'All accounts in that file are already on this device.';
+                } catch (error) {
+                    feedback.textContent = 'That account file is invalid or could not be imported.';
+                } finally {
+                    fileInput.value = '';
+                }
+            });
+        }
+
+        // Register account controls as soon as their form is available.
+        setupAccountAuth();
+        setupAccountSharing();
 
         function setupTouchControls() {
             const joystick = document.getElementById('touchJoystick');
