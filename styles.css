@@ -763,6 +763,56 @@ button:focus-visible {
   background: linear-gradient(135deg, rgba(8, 145, 178, 0.46), rgba(15, 23, 42, 0.98));
 }
 
+.account-sharing {
+  margin-top: 0.85rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.75rem;
+  background: rgba(2, 6, 23, 0.48);
+  text-align: left;
+}
+
+.account-sharing > strong {
+  color: #fbbf24;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.account-sharing > p {
+  margin: 0.3rem 0 0.55rem;
+  color: #94a3b8;
+  font-size: 0.65rem;
+  line-height: 1.45;
+}
+
+.account-sharing-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.account-share-button {
+  min-height: 38px;
+  padding: 0.45rem;
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: 0.6rem;
+  background: rgba(8, 47, 73, 0.58);
+  color: #bae6fd;
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+#accountSharingFeedback {
+  min-height: 1rem;
+  margin: 0.4rem 0 0;
+  color: #a7f3d0;
+  font-size: 0.62rem;
+  line-height: 1.4;
+}
+
 .account-notice {
   margin: 1.1rem 0 0;
   color: #64748b;
@@ -1211,6 +1261,187 @@ button:focus-visible {
   color: #94a3b8;
   font-size: 0.64rem;
   line-height: 1.4;
+}
+
+/* Fit the game and touch controls to phone viewports, including notched screens. */
+html,
+body.w-screen.h-screen {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+@supports (height: 100dvh) {
+  html,
+  body.w-screen.h-screen {
+    height: 100dvh;
+  }
+}
+
+#canvasContainer,
+#canvasContainer canvas,
+#zombieHealthBarsOverlay {
+  width: 100%;
+  height: 100%;
+}
+
+#canvasContainer canvas {
+  display: block;
+}
+
+@media (max-width: 600px) {
+  #mobileControls {
+    position: fixed;
+    inset: 0;
+  }
+
+  #touchJoystick {
+    width: clamp(88px, 25vw, 118px);
+    height: clamp(88px, 25vw, 118px);
+    left: max(12px, env(safe-area-inset-left));
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  #touchJoystickKnob {
+    width: clamp(38px, 10vw, 48px);
+    height: clamp(38px, 10vw, 48px);
+    margin: clamp(-24px, -5vw, -19px) 0 0 clamp(-24px, -5vw, -19px);
+  }
+
+  .touch-action-buttons {
+    right: max(10px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    grid-template-columns: repeat(2, clamp(48px, 15vw, 58px));
+    gap: 5px;
+  }
+
+  .touch-action.touch-fire {
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + clamp(132px, 23vh, 168px));
+    width: clamp(62px, 19vw, 72px);
+    height: clamp(62px, 19vw, 72px);
+  }
+}
+
+.salvage-panel {
+  position: fixed;
+  z-index: 14;
+  left: max(0.75rem, env(safe-area-inset-left));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  width: min(270px, calc(100vw - 1.5rem));
+  padding: 0.8rem;
+  border: 1px solid rgba(251, 191, 36, 0.48);
+  border-radius: 0.85rem;
+  background: rgba(8, 15, 25, 0.9);
+  color: #e2e8f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(12px);
+  pointer-events: auto;
+}
+
+.salvage-heading {
+  color: #fbbf24;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.salvage-objective,
+.salvage-nearby {
+  margin: 0.35rem 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.salvage-nearby {
+  min-height: 1rem;
+  color: #a5f3fc;
+  font-size: 0.64rem;
+}
+
+.salvage-action,
+.city-action {
+  width: 100%;
+  min-height: 38px;
+  margin-top: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(34, 211, 238, 0.55);
+  border-radius: 0.6rem;
+  background: linear-gradient(110deg, #0e7490, #155e75);
+  color: #ecfeff;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.city-action {
+  border-color: rgba(74, 222, 128, 0.55);
+  background: linear-gradient(110deg, #15803d, #166534);
+  color: #dcfce7;
+}
+
+.salvage-action:disabled {
+  cursor: default;
+  opacity: 0.48;
+}
+
+.salvage-action[hidden],
+.city-action[hidden] {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .salvage-panel {
+    left: max(0.4rem, env(safe-area-inset-left));
+    bottom: max(0.4rem, env(safe-area-inset-bottom));
+    width: min(220px, 58vw);
+    padding: 0.55rem;
+  }
+
+  .salvage-objective { font-size: 0.65rem; }
+  .salvage-nearby { font-size: 0.58rem; }
+  .salvage-action,
+  .city-action { min-height: 34px; font-size: 0.6rem; }
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+  .salvage-panel {
+    bottom: max(0.4rem, env(safe-area-inset-bottom));
+    width: min(205px, 32vw);
+    padding: 0.45rem;
+  }
+
+  #touchJoystick {
+    width: clamp(78px, 20vh, 104px);
+    height: clamp(78px, 20vh, 104px);
+    bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .touch-action-buttons {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    grid-template-columns: repeat(2, clamp(46px, 12vh, 56px));
+    gap: 4px;
+  }
+
+  .touch-action {
+    min-height: clamp(34px, 9vh, 42px);
+    font-size: clamp(0.45rem, 1.5vh, 0.54rem);
+  }
+
+  .touch-action.touch-fire {
+    bottom: calc(max(8px, env(safe-area-inset-bottom)) + clamp(88px, 18vh, 128px));
+    width: clamp(54px, 16vh, 68px);
+    height: clamp(54px, 16vh, 68px);
+  }
+
+  #missionPanel {
+    top: max(0.35rem, env(safe-area-inset-top));
+    width: min(230px, 34vw);
+    padding: 0.35rem 0.5rem;
+  }
 }
 
 
