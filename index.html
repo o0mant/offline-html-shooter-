@@ -394,7 +394,7 @@
             <p class="text-amber-300/70 text-xs uppercase tracking-widest mb-6">Sunrise Tactical Outpost Simulator</p>
            
             <div id="platformStep">
-                <p class="text-sm text-amber-100/80 mb-4">Choose how you want to play.</p>
+                <p class="text-sm text-amber-100/80 mb-4">Choose Windows or Phone to open the matching controls tutorial before you start.</p>
                 <div class="platform-picker" role="group" aria-label="Choose your platform">
                     <p class="platform-picker-title">CHOOSE YOUR PLATFORM</p>
                     <button id="windowsModeButton" class="platform-option" type="button" aria-pressed="false">
@@ -618,8 +618,8 @@
                 : 'Selected: Phone · Full touch controls';
             document.getElementById('modeStepTitle').textContent = `${windowsSelected ? 'Windows' : 'Phone'} selected — choose a game mode`;
             document.getElementById('controlInstructions').innerHTML = windowsSelected
-                ? '<div><strong class="text-amber-400">W, A, S, D:</strong> Move</div><div><strong class="text-amber-400">SHIFT:</strong> Sprint</div><div><strong class="text-amber-400">SPACE:</strong> Jump</div><div><strong class="text-amber-400">MOUSE:</strong> Aim · <strong class="text-amber-400">LEFT CLICK:</strong> Fire</div><div><strong class="text-amber-400">RIGHT CLICK:</strong> Aim down sights · <strong class="text-amber-400">R:</strong> Reload</div><div><strong class="text-amber-400">ESC:</strong> Pause or open the store</div>'
-                : '<div><strong class="text-amber-400">JOYSTICK:</strong> Move and steer</div><div><strong class="text-amber-400">SWIPE RIGHT SIDE:</strong> Aim</div><div><strong class="text-amber-400">FIRE / AIM:</strong> Shoot and aim down sights</div><div><strong class="text-amber-400">JUMP / SPRINT:</strong> Move quickly and avoid attacks</div><div><strong class="text-amber-400">RELOAD / PICK UP:</strong> Reload or collect nearby weapons</div>';
+                ? '<h3 class="tutorial-heading">CONTROLS TUTORIAL</h3><div><strong class="text-amber-400">W, A, S, D:</strong> Move · <strong class="text-amber-400">SHIFT:</strong> Sprint · <strong class="text-amber-400">SPACE:</strong> Jump</div><div><strong class="text-amber-400">MOUSE:</strong> Look around · <strong class="text-amber-400">LEFT CLICK:</strong> Fire · <strong class="text-amber-400">RIGHT CLICK:</strong> Aim down sights</div><div><strong class="text-amber-400">R:</strong> Reload · <strong class="text-amber-400">E:</strong> Collect parts / install tires · <strong class="text-amber-400">F:</strong> Enter or exit repaired car</div><div><strong class="text-amber-400">ESC:</strong> Pause · Use the on-screen prompt near the wreck to salvage or install parts</div>'
+                : '<h3 class="tutorial-heading">TOUCH CONTROLS TUTORIAL</h3><div><strong class="text-amber-400">LEFT JOYSTICK:</strong> Move · hold <strong class="text-amber-400">SPRINT</strong> to run</div><div><strong class="text-amber-400">SWIPE RIGHT SIDE:</strong> Look around · tap <strong class="text-amber-400">FIRE / AIM</strong> to shoot or aim</div><div><strong class="text-amber-400">JUMP / RELOAD / PICK UP:</strong> Tap the matching buttons</div><div><strong class="text-amber-400">WRECK &amp; PARTS:</strong> Tap the on-screen salvage button nearby; install each tire at the wreck, then tap <strong class="text-amber-400">ENTER CAR</strong> to drive</div>';
             document.getElementById('platformStep').classList.add('hidden');
             document.getElementById('modeStep').classList.remove('hidden');
             document.getElementById('startFeedback').textContent = '';
