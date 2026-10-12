@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apex Tactical - First-Person Night Survival Simulator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Dawn Survivor — First-Person Survival Simulator</title>
     <!-- Tailwind CSS for modern responsive overlay screens -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css">
@@ -158,8 +158,93 @@
 <body class="relative w-screen h-screen overflow-hidden">
 
 
+    <!-- Device selection from page1.html -->
+    <div id="deviceSelectionScreen" class="absolute inset-0 bg-slate-950/95 flex items-center justify-center z-30 p-6">
+        <section class="w-full max-w-lg rounded-2xl border border-emerald-500/40 bg-slate-900/95 p-8 text-center shadow-2xl">
+            <h1 class="mb-2 text-3xl font-black tracking-wide text-amber-400">DAWN SURVIVOR</h1>
+            <p class="text-slate-300">Choose how you want to play.</p>
+            <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                <button class="device-option rounded-xl border border-sky-500/50 bg-slate-800 p-5 text-left text-white hover:border-sky-300" type="button" data-device="desktop">
+                    <span class="block text-lg font-bold text-sky-300">Windows</span>
+                    <span class="mt-2 block text-sm text-slate-300">Keyboard and mouse controls</span>
+                </button>
+                <button class="device-option rounded-xl border border-emerald-500/50 bg-slate-800 p-5 text-left text-white hover:border-emerald-300" type="button" data-device="phone">
+                    <span class="block text-lg font-bold text-emerald-300">Phone</span>
+                    <span class="mt-2 block text-sm text-slate-300">Touch joystick, swipe aiming, and on-screen combat buttons</span>
+                </button>
+            </div>
+            <p id="deviceSelectionFeedback" class="mt-5 min-h-5 text-xs text-amber-200" aria-live="polite"></p>
+        </section>
+    </div>
+
+    <!-- Local account sign-in / registration. Accounts are stored in this browser only. -->
+    <div id="loginScreen" class="auth-screen hidden" aria-labelledby="loginTitle">
+        <section class="auth-card">
+            <div class="auth-mark" aria-hidden="true">DS</div>
+            <p class="auth-eyebrow">DAWN SURVIVOR ACCESS</p>
+            <h2 id="loginTitle">Welcome back</h2>
+            <p class="auth-copy">Continue on <strong id="chosenDeviceLabel">Windows</strong>.</p>
+            <div class="auth-tabs" role="tablist" aria-label="Account access">
+                <button class="auth-tab active" type="button" data-auth-mode="login">Sign in</button>
+                <button class="auth-tab" type="button" data-auth-mode="register">Create account</button>
+            </div>
+            <form id="loginForm" class="auth-form">
+                <label for="loginEmail">Email</label>
+                <input class="auth-input" id="loginEmail" name="email" type="email" autocomplete="username" placeholder="you@example.com" required>
+                <label for="loginPassword">Password</label>
+                <input class="auth-input" id="loginPassword" name="password" type="password" autocomplete="current-password" minlength="4" placeholder="At least 4 characters" required>
+                <p class="auth-feedback" aria-live="polite">Your account is saved only in this browser.</p>
+                <button class="auth-submit" type="submit">SIGN IN</button>
+            </form>
+            <form id="registerForm" class="auth-form hidden">
+                <label for="registerName">Display name</label>
+                <input class="auth-input" id="registerName" name="name" type="text" autocomplete="name" maxlength="32" placeholder="Survivor name" required>
+                <label for="registerEmail">Email</label>
+                <input class="auth-input" id="registerEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+                <label for="registerPassword">Password</label>
+                <input class="auth-input" id="registerPassword" name="password" type="password" autocomplete="new-password" minlength="6" placeholder="At least 6 characters" required>
+                <label for="registerConfirmPassword">Confirm password</label>
+                <input class="auth-input" id="registerConfirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Re-enter your password" required>
+                <button class="auth-submit" type="submit">CREATE ACCOUNT</button>
+            </form>
+            <p id="loginFeedback" class="auth-feedback" aria-live="polite"></p>
+            <button id="guestPlayButton" class="auth-submit guest-submit" type="button">PLAY AS GUEST</button>
+            <p class="guest-note">Guest progress stays on this device and can’t be linked to an account.</p>
+            <button id="backToDeviceButton" class="auth-back" type="button">← Change device</button>
+        </section>
+    </div>
+
+    <div id="accountPreviewScreen" class="account-preview-screen hidden" role="dialog" aria-modal="true" aria-labelledby="accountPreviewTitle">
+        <section class="account-preview-card">
+            <button id="closeAccountPreview" class="account-preview-close" type="button" aria-label="Close account preview">×</button>
+            <div class="auth-mark" aria-hidden="true">DS</div>
+            <p class="auth-eyebrow">LOCAL SURVIVOR PROFILE</p>
+            <h2 id="accountPreviewTitle">Your account</h2>
+            <div class="account-details">
+                <div><span>DISPLAY NAME</span><strong id="previewName">—</strong></div>
+                <div><span>EMAIL</span><strong id="previewEmail">—</strong></div>
+                <div><span>DEVICE</span><strong id="previewDevice">—</strong></div>
+                <div><span>ACCOUNT CREATED</span><strong id="previewCreated">—</strong></div>
+            </div>
+            <button id="editAccountButton" class="auth-back" type="button">Edit profile</button>
+            <form id="editAccountForm" class="auth-form hidden">
+                <label for="editAccountName">Display name</label>
+                <input class="auth-input" id="editAccountName" type="text" maxlength="32" required>
+                <label for="editAccountEmail">Email</label>
+                <input class="auth-input" id="editAccountEmail" type="email" required>
+                <button class="auth-submit" type="submit">SAVE PROFILE</button>
+            </form>
+            <p id="profileFeedback" class="auth-feedback" aria-live="polite"></p>
+            <button id="signOutButton" class="auth-back" type="button">Sign out</button>
+        </section>
+    </div>
+
     <!-- 3D WebGL Canvas -->
     <div id="canvasContainer" class="absolute inset-0"></div>
+    <div id="cinematicFx" class="cinematic-fx" aria-hidden="true">
+        <div class="fx-scanlines"></div>
+        <div class="fx-vignette"></div>
+    </div>
 
 
     <!-- DOM CONTAINER FOR 3D ZOMBIE HEALTH BARS -->
@@ -282,6 +367,22 @@
         </div>
     </div>
 
+    <!-- Touch controls shown only after selecting Phone. -->
+    <div id="touchControls" class="touch-controls" aria-label="Touchscreen game controls">
+        <div id="movePad" class="touch-pad move-pad" aria-label="Movement joystick">
+            <span class="touch-pad-label">MOVE</span>
+            <span class="move-knob" id="moveKnob"></span>
+        </div>
+        <div id="lookPad" class="look-pad" aria-label="Drag to look around"></div>
+        <div class="touch-action-group">
+            <button id="touchJump" class="touch-action touch-jump" type="button" aria-label="Jump">JUMP</button>
+            <button id="touchAds" class="touch-action touch-ads" type="button" aria-label="Aim down sights">AIM</button>
+            <button id="touchFire" class="touch-action touch-fire" type="button" aria-label="Fire weapon">FIRE</button>
+            <button id="touchReload" class="touch-action touch-reload" type="button" aria-label="Reload">RELOAD</button>
+            <button id="touchSprint" class="touch-action touch-sprint" type="button" aria-label="Sprint">SPRINT</button>
+        </div>
+    </div>
+
     <!-- Inventory and weapon store -->
     <div id="equipmentScreen" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm hidden z-20 p-4 flex items-center justify-center">
                     <div class="max-w-5xl w-full max-h-[90vh] overflow-y-auto bg-slate-900/95 border border-amber-500/40 rounded-2xl p-6 shadow-2xl">
@@ -309,7 +410,7 @@
     </div>
 
     <!-- UI OVERLAY: START MENU -->
-    <div id="startScreen" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center z-20 p-6">
+    <div id="startScreen" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center hidden z-20 p-6">
         <div id="startCard" class="max-w-md w-full bg-amber-950/95 border border-amber-500/30 rounded-2xl p-8 text-center shadow-2xl relative overflow-hidden catch-animation">
             <div class="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
            
@@ -333,10 +434,21 @@
             </div>
 
 
+            <div id="accountSummary" class="account-summary hidden">
+                <span class="account-status-dot" aria-hidden="true"></span>
+                <div class="account-summary-copy"><span>SIGNED IN AS</span><strong id="menuAccountName">Survivor</strong></div>
+                <button id="accountPreviewButton" type="button">VIEW PROFILE</button>
+            </div>
+            <div id="guestSummary" class="guest-summary hidden" aria-live="polite">
+                <span class="guest-status-dot" aria-hidden="true"></span>
+                <div><strong>GUEST SESSION</strong><span>Playing locally on this device</span></div>
+            </div>
             <div class="menu-options">
                 <button id="startButton" class="menu-option-button primary-option" type="button">START STORY MODE</button>
                 <button id="careerButton" class="menu-option-button" type="button">START CAREER MODE</button>
                 <button id="loadGameButton" class="menu-option-button" type="button">CONTINUE SAVED GAME</button>
+                <button id="changeDeviceButton" class="menu-option-button" type="button">CHANGE DEVICE</button>
+                <button id="visualFxButton" class="menu-option-button fx-option" type="button" aria-pressed="true">CINEMATIC FX: ON</button>
                 <button id="exitGameButton" class="menu-option-button exit-option" type="button">EXIT GAME</button>
                 <p id="startFeedback" class="menu-feedback" aria-live="polite"></p>
             </div>
@@ -386,15 +498,43 @@
     </div>
 
 
-    <!-- Three.js CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Guests skip account creation; game progress remains local to this browser.
+        document.getElementById('guestPlayButton').addEventListener('click', () => {
+            currentAccount = null;
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('accountPreviewScreen').classList.add('hidden');
+            document.getElementById('accountSummary').classList.add('hidden');
+            document.getElementById('guestSummary').classList.remove('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+            document.getElementById('startFeedback').textContent = 'Guest session ready. Your progress is saved locally on this device.';
+            try { sessionStorage.setItem('dawnSurvivorGuest', 'true'); } catch (_) {}
+        });
 
+        const fxButton = document.getElementById('visualFxButton');
+        const fxEnabled = (() => {
+            try { return localStorage.getItem('dawnSurvivorFx') !== 'off'; } catch (_) { return true; }
+        })();
+        document.body.classList.toggle('cinematic-fx', fxEnabled);
+        fxButton.setAttribute('aria-pressed', String(fxEnabled));
+        fxButton.textContent = `CINEMATIC FX: ${fxEnabled ? 'ON' : 'OFF'}`;
+        fxButton.addEventListener('click', () => {
+            const enabled = document.body.classList.toggle('cinematic-fx');
+            fxButton.setAttribute('aria-pressed', String(enabled));
+            fxButton.textContent = `CINEMATIC FX: ${enabled ? 'ON' : 'OFF'}`;
+            try { localStorage.setItem('dawnSurvivorFx', enabled ? 'on' : 'off'); } catch (_) {}
+        });
+    </script>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
         // --- GAME & THREE.JS SETUP ---
         let scene, camera, renderer;
         let gameState = 'START'; // START, PLAYING, PAUSED, MENU, GAMEOVER
         let gameMode = 'STORY';
+        let isPhoneDevice = false;
         const SAVE_KEY = 'dawnSurvivorSave';
         let keys = {};
         let ambientLight, sunLight, rainField;
@@ -621,7 +761,7 @@
 
             const canvasEl = document.getElementById('canvasContainer');
             canvasEl.addEventListener('click', () => {
-                if(gameState === 'PLAYING') {
+                if(gameState === 'PLAYING' && !isPhoneDevice) {
                     document.body.requestPointerLock();
                 }
             });
@@ -660,7 +800,7 @@
 
             window.addEventListener('contextmenu', e => e.preventDefault());
             document.addEventListener('pointerlockchange', () => {
-                if (gameState === 'PLAYING' && document.pointerLockElement !== document.body) pauseGame();
+                if (!isPhoneDevice && gameState === 'PLAYING' && document.pointerLockElement !== document.body) pauseGame();
             });
         }
 
@@ -855,7 +995,7 @@
             gameState = equipmentReturnState;
             if (gameState === 'PAUSED') {
                 document.getElementById('pauseScreen').classList.remove('hidden');
-            } else {
+            } else if (!isPhoneDevice) {
                 document.body.requestPointerLock();
             }
         }
@@ -1402,7 +1542,7 @@
             if (gameState !== 'PAUSED') return;
             document.getElementById('pauseScreen').classList.add('hidden');
             gameState = 'PLAYING';
-            document.body.requestPointerLock();
+            if (!isPhoneDevice) document.body.requestPointerLock();
         }
 
 
@@ -1484,7 +1624,7 @@
             document.getElementById('gameOverScreen').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
             gameState = 'PLAYING';
-            document.body.requestPointerLock();
+            if (!isPhoneDevice) document.body.requestPointerLock();
         }
 
         function saveGame() {
@@ -1542,8 +1682,13 @@
             document.getElementById('pauseScreen').classList.add('hidden');
             document.getElementById('equipmentScreen').classList.add('hidden');
             document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('deviceSelectionScreen').classList.add('hidden');
             document.getElementById('startScreen').classList.remove('hidden');
-            document.getElementById('startFeedback').textContent = 'Game exited. You can close this browser tab.';
+            isMouseDown = false;
+            player.isADS = false;
+            document.getElementById('adsOverlay').style.display = 'none';
+            document.getElementById('startFeedback').textContent = 'Back at the main menu. Choose a mode or switch device.';
         }
 
 
@@ -1895,6 +2040,311 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
+
+        function setupTouchControls() {
+            const movePad = document.getElementById('movePad');
+            const moveKnob = document.getElementById('moveKnob');
+            const lookPad = document.getElementById('lookPad');
+            let movePointer = null;
+            let lookPointer = null;
+            let lastLookX = 0;
+            let lastLookY = 0;
+
+            const resetMovement = () => {
+                ['KeyW', 'KeyA', 'KeyS', 'KeyD'].forEach(code => { keys[code] = false; });
+                moveKnob.style.transform = 'translate(0, 0)';
+            };
+            const updateMovement = event => {
+                const rect = movePad.getBoundingClientRect();
+                const maxRadius = rect.width * 0.31;
+                const dx = event.clientX - (rect.left + rect.width / 2);
+                const dy = event.clientY - (rect.top + rect.height / 2);
+                const length = Math.hypot(dx, dy) || 1;
+                const scale = Math.min(1, maxRadius / length);
+                const x = dx * scale;
+                const y = dy * scale;
+                moveKnob.style.transform = `translate(${x}px, ${y}px)`;
+                keys.KeyA = x < -12;
+                keys.KeyD = x > 12;
+                keys.KeyW = y < -12;
+                keys.KeyS = y > 12;
+            };
+
+            movePad.addEventListener('pointerdown', event => {
+                event.preventDefault();
+                movePointer = event.pointerId;
+                movePad.setPointerCapture(movePointer);
+                updateMovement(event);
+            });
+            movePad.addEventListener('pointermove', event => {
+                if (event.pointerId === movePointer) updateMovement(event);
+            });
+            ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => {
+                movePad.addEventListener(type, event => {
+                    if (event.pointerId !== movePointer) return;
+                    movePointer = null;
+                    resetMovement();
+                });
+            });
+
+            lookPad.addEventListener('pointerdown', event => {
+                if (gameState !== 'PLAYING') return;
+                event.preventDefault();
+                lookPointer = event.pointerId;
+                lastLookX = event.clientX;
+                lastLookY = event.clientY;
+                lookPad.setPointerCapture(lookPointer);
+            });
+            lookPad.addEventListener('pointermove', event => {
+                if (event.pointerId !== lookPointer || gameState !== 'PLAYING') return;
+                event.preventDefault();
+                mouseX -= (event.clientX - lastLookX) * 0.006;
+                mouseY = Math.max(-1.2, Math.min(1.2, mouseY - (event.clientY - lastLookY) * 0.006));
+                lastLookX = event.clientX;
+                lastLookY = event.clientY;
+            });
+            ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => {
+                lookPad.addEventListener(type, event => {
+                    if (event.pointerId === lookPointer) lookPointer = null;
+                });
+            });
+
+            const bindHold = (id, start, stop) => {
+                const button = document.getElementById(id);
+                button.addEventListener('pointerdown', event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    button.setPointerCapture(event.pointerId);
+                    start();
+                });
+                ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => button.addEventListener(type, event => {
+                    event.preventDefault();
+                    stop();
+                }));
+            };
+            bindHold('touchFire', () => { isMouseDown = true; }, () => { isMouseDown = false; });
+            bindHold('touchAds', () => {
+                player.isADS = true;
+                document.getElementById('adsOverlay').style.display = 'flex';
+            }, () => {
+                player.isADS = false;
+                document.getElementById('adsOverlay').style.display = 'none';
+            });
+            bindHold('touchSprint', () => { keys.ShiftLeft = true; }, () => { keys.ShiftLeft = false; });
+            document.getElementById('touchJump').addEventListener('pointerdown', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (gameState === 'PLAYING' && jumpHeight <= 0) jumpVelocity = 7;
+            });
+            document.getElementById('touchReload').addEventListener('pointerdown', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                reloadWeapon();
+            });
+        }
+
+        setupTouchControls();
+        document.querySelectorAll('[data-device]').forEach(button => {
+            button.addEventListener('click', () => {
+                isPhoneDevice = button.dataset.device === 'phone';
+                document.body.classList.toggle('phone-mode', isPhoneDevice);
+                document.getElementById('deviceSelectionScreen').classList.add('hidden');
+                document.getElementById('chosenDeviceLabel').textContent = isPhoneDevice ? 'Phone' : 'Windows';
+                document.getElementById('loginFeedback').textContent = isPhoneDevice
+                    ? 'Phone selected. Sign in to continue with touch controls.'
+                    : 'Windows selected. Sign in to continue with keyboard and mouse.';
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('loginEmail').focus();
+            });
+        });
+
+        const ACCOUNTS_KEY = 'dawnSurvivorAccounts';
+        let currentAccount = null;
+
+        function getAccounts() {
+            try {
+                const accounts = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]');
+                return Array.isArray(accounts) ? accounts : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function saveAccounts(accounts) {
+            localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+        }
+
+        function createSalt() {
+            const bytes = new Uint8Array(16);
+            crypto.getRandomValues(bytes);
+            return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function hashPassword(password, salt) {
+            if (!window.crypto || !crypto.subtle) throw new Error('Secure password storage is unavailable in this browser.');
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']
+            );
+            const derivedBits = await crypto.subtle.deriveBits({
+                name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations: 120000, hash: 'SHA-256'
+            }, keyMaterial, 256);
+            return Array.from(new Uint8Array(derivedBits), byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+
+        function setAuthMode(mode) {
+            const registering = mode === 'register';
+            document.getElementById('loginForm').classList.toggle('hidden', registering);
+            document.getElementById('registerForm').classList.toggle('hidden', !registering);
+            document.getElementById('loginTitle').textContent = registering ? 'Create your account' : 'Welcome back';
+            document.querySelectorAll('[data-auth-mode]').forEach(tab => {
+                const active = tab.dataset.authMode === mode;
+                tab.classList.toggle('active', active);
+                tab.setAttribute('aria-selected', String(active));
+            });
+            document.getElementById('loginFeedback').textContent = '';
+        }
+
+        function enterMainMenu(account, message) {
+            currentAccount = account;
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+            document.getElementById('accountSummary').classList.remove('hidden');
+            document.getElementById('menuAccountName').textContent = account.name;
+            document.getElementById('startFeedback').textContent = message;
+        }
+
+        function showAccountPreview() {
+            if (!currentAccount) return;
+            document.getElementById('previewName').textContent = currentAccount.name;
+            document.getElementById('previewEmail').textContent = currentAccount.email;
+            document.getElementById('previewDevice').textContent = isPhoneDevice ? 'Phone' : 'Windows';
+            document.getElementById('previewCreated').textContent = new Date(currentAccount.createdAt).toLocaleDateString();
+            document.getElementById('editAccountName').value = currentAccount.name;
+            document.getElementById('editAccountEmail').value = currentAccount.email;
+            document.getElementById('profileFeedback').textContent = '';
+            document.getElementById('editAccountForm').classList.add('hidden');
+            document.getElementById('accountPreviewScreen').classList.remove('hidden');
+        }
+
+        document.querySelectorAll('[data-auth-mode]').forEach(tab => {
+            tab.addEventListener('click', () => setAuthMode(tab.dataset.authMode));
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async event => {
+            event.preventDefault();
+            const feedback = document.getElementById('loginFeedback');
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+            const password = document.getElementById('loginPassword').value;
+            const account = getAccounts().find(saved => saved.email === email);
+            if (!account) {
+                feedback.textContent = 'No account found for that email. Create an account first.';
+                return;
+            }
+            try {
+                const enteredHash = await hashPassword(password, account.salt);
+                if (enteredHash !== account.passwordHash) {
+                    feedback.textContent = 'That password does not match this account.';
+                    return;
+                }
+                enterMainMenu(account, `Signed in as ${account.email}. Select a game mode to begin.`);
+                document.getElementById('loginPassword').value = '';
+            } catch (error) {
+                feedback.textContent = error.message || 'Unable to sign in on this browser.';
+            }
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async event => {
+            event.preventDefault();
+            const feedback = document.getElementById('loginFeedback');
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim().toLowerCase();
+            const password = document.getElementById('registerPassword').value;
+            const confirmation = document.getElementById('registerConfirmPassword').value;
+            if (password.length < 6) {
+                feedback.textContent = 'Choose a password with at least 6 characters.';
+                return;
+            }
+            if (password !== confirmation) {
+                feedback.textContent = 'The passwords do not match.';
+                return;
+            }
+            const accounts = getAccounts();
+            if (accounts.some(account => account.email === email)) {
+                feedback.textContent = 'An account with that email already exists. Sign in instead.';
+                return;
+            }
+            try {
+                const salt = createSalt();
+                const account = {
+                    name,
+                    email,
+                    salt,
+                    passwordHash: await hashPassword(password, salt),
+                    createdAt: new Date().toISOString()
+                };
+                accounts.push(account);
+                saveAccounts(accounts);
+                document.getElementById('registerForm').reset();
+                enterMainMenu(account, `Account created for ${account.email}. Welcome, ${account.name}!`);
+            } catch (error) {
+                feedback.textContent = error.message || 'Unable to save this account in browser storage.';
+            }
+        });
+
+        document.getElementById('accountPreviewButton').addEventListener('click', showAccountPreview);
+        document.getElementById('closeAccountPreview').addEventListener('click', () => {
+            document.getElementById('accountPreviewScreen').classList.add('hidden');
+        });
+        document.getElementById('accountPreviewScreen').addEventListener('click', event => {
+            if (event.target.id === 'accountPreviewScreen') event.currentTarget.classList.add('hidden');
+        });
+        document.getElementById('editAccountButton').addEventListener('click', () => {
+            document.getElementById('editAccountForm').classList.toggle('hidden');
+        });
+        document.getElementById('editAccountForm').addEventListener('submit', event => {
+            event.preventDefault();
+            if (!currentAccount) return;
+            const name = document.getElementById('editAccountName').value.trim();
+            const email = document.getElementById('editAccountEmail').value.trim().toLowerCase();
+            const accounts = getAccounts();
+            if (accounts.some(account => account.email === email && account.email !== currentAccount.email)) {
+                document.getElementById('profileFeedback').textContent = 'That email is already used by another account.';
+                return;
+            }
+            const accountIndex = accounts.findIndex(account => account.email === currentAccount.email);
+            if (accountIndex < 0) return;
+            accounts[accountIndex] = { ...accounts[accountIndex], name, email };
+            try {
+                saveAccounts(accounts);
+                currentAccount = accounts[accountIndex];
+                document.getElementById('menuAccountName').textContent = name;
+                document.getElementById('previewName').textContent = name;
+                document.getElementById('previewEmail').textContent = email;
+                document.getElementById('profileFeedback').textContent = 'Profile saved in this browser.';
+            } catch (error) {
+                document.getElementById('profileFeedback').textContent = 'Unable to save profile changes.';
+            }
+        });
+        document.getElementById('signOutButton').addEventListener('click', () => {
+            currentAccount = null;
+            document.getElementById('accountPreviewScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('accountSummary').classList.add('hidden');
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            setAuthMode('login');
+            document.getElementById('loginScreen').classList.remove('hidden');
+        });
+
+        document.getElementById('backToDeviceButton').addEventListener('click', () => {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('deviceSelectionScreen').classList.remove('hidden');
+        });
+
+        document.getElementById('changeDeviceButton').addEventListener('click', () => {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('deviceSelectionScreen').classList.remove('hidden');
+        });
 
         document.getElementById('startButton').addEventListener('click', () => startGame('STORY'));
         document.getElementById('careerButton').addEventListener('click', () => startGame('CAREER'));
