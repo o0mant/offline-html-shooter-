@@ -170,10 +170,15 @@
     const PARTS = [
         { name: 'ENGINE', color: 0xf97316, x: -10, z: 8, shape: 'engine' },
         { name: 'BATTERY', color: 0x22d3ee, x: 9, z: 11, shape: 'battery' },
-        { name: 'WHEEL', color: 0xfbbf24, x: -7, z: -10, shape: 'wheel' },
-        { name: 'FUEL CAN', color: 0xef4444, x: 12, z: -7, shape: 'fuel' }
+        { name: 'FUEL CAN', color: 0xef4444, x: 12, z: -7, shape: 'fuel' },
+        { name: 'TIRE 1', color: 0xfbbf24, x: -7, z: -10, shape: 'wheel' },
+        { name: 'TIRE 2', color: 0xfbbf24, x: 8, z: -12, shape: 'wheel' },
+        { name: 'TIRE 3', color: 0xfbbf24, x: -13, z: 1, shape: 'wheel' },
+        { name: 'TIRE 4', color: 0xfbbf24, x: 14, z: 4, shape: 'wheel' }
     ];
+    const TIRE_NAMES = PARTS.filter(part => part.shape === 'wheel').map(part => part.name);
     const collected = new Set();
+    const installedTires = new Set();
     let worldScene = null;
     let wreckGroup = null;
     let driveCar = null;
@@ -190,27 +195,55 @@
     ui.hidden = true;
     ui.className = 'salvage-panel';
     ui.setAttribute('aria-live', 'polite');
-    ui.innerHTML = '<strong class="salvage-heading">WRECK RECOVERY</strong><p class="salvage-objective"></p><p class="salvage-nearby"></p><button class="salvage-action" type="button">SALVAGE PART</button><button class="city-action" type="button" hidden>DRIVE TO BRIGHT CITY</button>';
+    ui.innerHTML = '<strong class="salvage-heading">WRECK RECOVERY</strong><p class="salvage-objective"></p><p class="salvage-nearby"></p><button class="salvage-action" type="button">SALVAGE PART</button><button class="ride-action" type="button" hidden>ENTER CAR</button><button class="city-action" type="button" hidden>DRIVE TO BRIGHT CITY</button>';
     document.body.appendChild(ui);
     const objective = ui.querySelector('.salvage-objective');
     const nearby = ui.querySelector('.salvage-nearby');
     const salvageButton = ui.querySelector('.salvage-action');
+    const rideButton = ui.querySelector('.ride-action');
     const cityButton = ui.querySelector('.city-action');
 
+    function isRepaired() {
+        return PARTS.filter(part => part.shape !== 'wheel').every(part => collected.has(part.name))
+            && installedTires.size === TIRE_NAMES.length;
+    }
+
+    function carriedTire() {
+        return TIRE_NAMES.find(name => collected.has(name) && !installedTires.has(name));
+    }
+
     function paintObjective() {
-        if (collected.size < PARTS.length) {
-            objective.textContent = `Recover car parts · ${collected.size}/${PARTS.length}`;
-            salvageButton.hidden = collected.size === PARTS.length;
+        const recoveredParts = PARTS.filter(part => part.shape !== 'wheel' && collected.has(part.name)).length;
+        if (!isRepaired()) {
+            objective.textContent = `Parts ${recoveredParts}/3 · tires installed ${installedTires.size}/4`;
+            salvageButton.hidden = false;
+            rideButton.hidden = true;
             cityButton.hidden = true;
+            salvageButton.textContent = carriedTire() && !inCity
+                ? (isNearWreck() ? 'INSTALL NEXT TIRE' : 'RETURN TO WRECK')
+                : 'SALVAGE PART';
         } else {
             objective.textContent = inCity ? 'Bright City · elite infected nearby' : 'Car repaired · city route unlocked';
             salvageButton.hidden = true;
+            rideButton.hidden = false;
+            rideButton.textContent = driving ? 'EXIT CAR' : 'ENTER CAR';
             cityButton.hidden = false;
-            cityButton.textContent = inCity ? 'RETURN TO OUTPOST' : (driving ? 'PARK VEHICLE' : 'DRIVE TO BRIGHT CITY');
+            cityButton.textContent = inCity ? 'RETURN TO OUTPOST' : 'DRIVE TO BRIGHT CITY';
         }
     }
 
-    function makeCar(color = 0x475569) {
+    function addCarWheel(group, x, z) {
+        const wheel = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.43, 0.43, 0.28, 12),
+            new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.9 })
+        );
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.set(x, 0.48, z);
+        group.add(wheel);
+        return wheel;
+    }
+
+    function makeCar(color = 0x475569, tireCount = 4) {
         const group = new THREE.Group();
         const body = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.75, 1.9), new THREE.MeshStandardMaterial({ color, roughness: 0.76 }));
         body.position.y = 0.85;
@@ -218,13 +251,8 @@
         const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.72, 1.55), new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.42, metalness: 0.25 }));
         cabin.position.set(-0.25, 1.55, 0);
         group.add(cabin);
-        const dark = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.9 });
-        [-1.15, 1.15].forEach(x => [-1, 1].forEach(z => {
-            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.43, 0.28, 12), dark);
-            wheel.rotation.x = Math.PI / 2;
-            wheel.position.set(x, 0.48, z);
-            group.add(wheel);
-        }));
+        const wheelPositions = [[-1.15, -1], [-1.15, 1], [1.15, -1], [1.15, 1]];
+        wheelPositions.slice(0, tireCount).forEach(([x, z]) => addCarWheel(group, x, z));
         const glass = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.25, metalness: 0.2 });
         const windshield = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.48, 1.28), glass);
         windshield.position.set(0.68, 1.56, 0);
@@ -325,6 +353,7 @@
         if (scene === worldScene) return;
         worldScene = scene;
         collected.clear();
+        installedTires.clear();
         partObjects = [];
         wreckGroup = null;
         driveCar = null;
@@ -333,7 +362,7 @@
         driving = false;
         lastBoosted = new WeakSet();
         originalSpeed = null;
-        wreckGroup = makeCar(0x334155);
+        wreckGroup = makeCar(0x334155, 0);
         wreckGroup.position.set(0, 0, 0);
         wreckGroup.rotation.y = 0.35;
         scene.add(wreckGroup);
@@ -365,27 +394,41 @@
         return nearest;
     }
 
-    function collectNearest() {
+    function isNearWreck() {
+        return typeof player !== 'undefined' && Math.hypot(player.x - wreckGroup.position.x, player.z - wreckGroup.position.z) < 4.2;
+    }
+
+    function interactWithCarAndParts() {
+        if (!isRepaired() && !inCity && isNearWreck() && carriedTire()) {
+            const tireName = carriedTire();
+            const tireIndex = TIRE_NAMES.indexOf(tireName);
+            installedTires.add(tireName);
+            const wheelPositions = [[-1.15, -1], [-1.15, 1], [1.15, -1], [1.15, 1]];
+            addCarWheel(wreckGroup, ...wheelPositions[tireIndex]);
+            nearby.textContent = `${tireName} installed · ${installedTires.size}/4 tires fitted.`;
+            if (isRepaired()) {
+                driveCar = makeCar(0x16a34a);
+                driveCar.position.set(player.x, 0, player.z);
+                scene.add(driveCar);
+                nearby.textContent = 'All parts fitted — the car is ready to drive!';
+            }
+            paintObjective();
+            return;
+        }
+
         const part = nearestPart();
         if (!part) return;
-        collected.add(part.userData.salvagePart);
+        const name = part.userData.salvagePart;
+        collected.add(name);
         scene.remove(part);
         partObjects = partObjects.filter(item => item !== part);
-        if (collected.size === PARTS.length) {
-            driveCar = makeCar(0x16a34a);
-            driveCar.position.set(player.x, 0, player.z);
-            scene.add(driveCar);
-            nearby.textContent = 'All parts recovered — the car is repaired!';
-        } else {
-            nearby.textContent = `${part.userData.salvagePart} recovered.`;
-        }
+        nearby.textContent = `${name} recovered. Return to the wreck to install tires.`;
         paintObjective();
     }
 
     function switchMap(toCity) {
-        if (!cityGroup || collected.size < PARTS.length) return;
+        if (!cityGroup || !isRepaired()) return;
         inCity = toCity;
-        driving = false;
         if (!savedAtmosphere) savedAtmosphere = { background: scene.background, fog: scene.fog };
         cityGroup.visible = toCity;
         if (toCity) {
@@ -409,18 +452,32 @@
         paintObjective();
     }
 
-    function toggleDrive() {
-        if (collected.size < PARTS.length) return;
-        if (!inCity) {
-            switchMap(true);
-            driving = true;
+    function setDriving(active) {
+        if (!isRepaired() || driving === active) return;
+        driving = active;
+        if (active) {
             originalSpeed = player.speed;
             player.speed = Math.max(player.speed, 0.34);
-            cityButton.textContent = 'PARK VEHICLE';
+            nearby.textContent = 'You are in the car. Use the movement controls to drive.';
         } else {
-            switchMap(false);
             if (originalSpeed !== null) player.speed = originalSpeed;
             originalSpeed = null;
+            nearby.textContent = 'You stepped out of the car.';
+        }
+        paintObjective();
+    }
+
+    function toggleRide() {
+        setDriving(!driving);
+    }
+
+    function toggleCity() {
+        if (!isRepaired()) return;
+        if (!inCity) {
+            setDriving(true);
+            switchMap(true);
+        } else {
+            switchMap(false);
         }
     }
 
@@ -442,10 +499,166 @@
         });
     }
 
-    salvageButton.addEventListener('click', collectNearest);
-    cityButton.addEventListener('click', toggleDrive);
+    function drawDetailedMinimap() {
+        const canvas = document.getElementById('minimapCanvas');
+        if (!canvas || typeof player === 'undefined') return;
+        if (canvas.width !== 220 || canvas.height !== 220) {
+            canvas.width = 220;
+            canvas.height = 220;
+        }
+        const ctx = canvas.getContext('2d');
+        const size = canvas.width;
+        const center = size / 2;
+        const viewRadius = inCity ? 68 : 38;
+        const scale = size / (viewRadius * 2);
+        const mapX = x => center + (x - player.x) * scale;
+        const mapZ = z => center + (z - player.z) * scale;
+
+        ctx.clearRect(0, 0, size, size);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(center, center, center - 2, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.fillStyle = inCity ? '#b7dda0' : '#263b38';
+        ctx.fillRect(0, 0, size, size);
+
+        const grid = inCity ? 19 : 10;
+        ctx.strokeStyle = inCity ? 'rgba(61, 104, 75, .24)' : 'rgba(148, 163, 184, .18)';
+        ctx.lineWidth = 1;
+        const firstX = Math.floor((player.x - viewRadius) / grid) * grid;
+        const firstZ = Math.floor((player.z - viewRadius) / grid) * grid;
+        for (let x = firstX; x <= player.x + viewRadius; x += grid) {
+            ctx.beginPath(); ctx.moveTo(mapX(x), 0); ctx.lineTo(mapX(x), size); ctx.stroke();
+        }
+        for (let z = firstZ; z <= player.z + viewRadius; z += grid) {
+            ctx.beginPath(); ctx.moveTo(0, mapZ(z)); ctx.lineTo(size, mapZ(z)); ctx.stroke();
+        }
+
+        if (inCity) {
+            ctx.fillStyle = '#485569';
+            ctx.fillRect(mapX(228), 0, 24 * scale, size);
+            ctx.fillRect(0, mapZ(228), size, 24 * scale);
+            ctx.strokeStyle = 'rgba(255, 255, 255, .65)';
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(mapX(240), 0); ctx.lineTo(mapX(240), size); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, mapZ(240)); ctx.lineTo(size, mapZ(240)); ctx.stroke();
+            ctx.setLineDash([]);
+            const colors = ['#e9bb80', '#91bfd1', '#d99d9d', '#d0d5df', '#93ad92', '#dfbd58'];
+            let building = 0;
+            for (let x = 170; x <= 310; x += 38) {
+                for (let z = 170; z <= 310; z += 38) {
+                    if (Math.abs(x - 240) < 24 || Math.abs(z - 240) < 24) continue;
+                    const left = mapX(x - 9), top = mapZ(z - 9);
+                    const width = 18 * scale, height = 18 * scale;
+                    if (left > size || top > size || left + width < 0 || top + height < 0) continue;
+                    ctx.fillStyle = colors[building++ % colors.length];
+                    ctx.fillRect(left, top, width, height);
+                    ctx.strokeStyle = 'rgba(40, 55, 65, .7)';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(left, top, width, height);
+                    ctx.fillStyle = 'rgba(255, 245, 180, .9)';
+                    ctx.fillRect(left + width * .25, top + height * .2, Math.max(2, width * .12), Math.max(2, height * .12));
+                    ctx.fillRect(left + width * .62, top + height * .62, Math.max(2, width * .12), Math.max(2, height * .12));
+                }
+            }
+        } else {
+            const nearbyObstacles = typeof obstacles !== 'undefined' && Array.isArray(obstacles) ? obstacles : [];
+            nearbyObstacles.forEach(item => {
+                if (!item || typeof item !== 'object') return;
+                const object = item.mesh || item;
+                const pos = object.position || item.position;
+                if (!pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.z)) return;
+                const x = mapX(pos.x), z = mapZ(pos.z);
+                if (x < 0 || x > size || z < 0 || z > size) return;
+                ctx.fillStyle = '#687783';
+                ctx.fillRect(x - 3, z - 3, 6, 6);
+                ctx.strokeStyle = 'rgba(226, 232, 240, .65)';
+                ctx.strokeRect(x - 3, z - 3, 6, 6);
+            });
+        }
+
+        const drawDot = (x, z, color, radius, label = '') => {
+            const px = mapX(x), pz = mapZ(z);
+            if (px < -8 || px > size + 8 || pz < -8 || pz > size + 8) return;
+            ctx.beginPath();
+            ctx.arc(px, pz, radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 7;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            if (label) {
+                ctx.fillStyle = '#07111b';
+                ctx.font = 'bold 7px system-ui';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(label, px, pz + 0.5);
+            }
+        };
+
+        if (wreckGroup && !inCity) {
+            const x = mapX(wreckGroup.position.x), z = mapZ(wreckGroup.position.z);
+            ctx.fillStyle = '#f97316';
+            ctx.fillRect(x - 5, z - 5, 10, 10);
+            ctx.strokeStyle = '#fff7ed';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(x - 5, z - 5, 10, 10);
+        }
+        partObjects.forEach(part => {
+            const name = part.userData.salvagePart || '';
+            const label = name.startsWith('TIRE') ? 'T' : name === 'ENGINE' ? 'E' : name === 'BATTERY' ? 'B' : 'F';
+            const color = name.startsWith('TIRE') ? '#fbbf24' : name === 'ENGINE' ? '#f97316' : name === 'BATTERY' ? '#22d3ee' : '#ef4444';
+            drawDot(part.position.x, part.position.z, color, 4.2, label);
+        });
+        if (typeof zombies !== 'undefined' && Array.isArray(zombies)) {
+            zombies.forEach(zombie => {
+                if (!zombie || typeof zombie !== 'object') return;
+                const object = zombie.mesh || zombie.group || zombie.model || zombie;
+                const x = Number.isFinite(zombie.x) ? zombie.x : object.position && object.position.x;
+                const z = Number.isFinite(zombie.z) ? zombie.z : object.position && object.position.z;
+                if (Number.isFinite(x) && Number.isFinite(z)) drawDot(x, z, '#fb3d4b', 2.8);
+            });
+        }
+        if (driveCar && driving) drawDot(driveCar.position.x, driveCar.position.z, '#34d399', 4.2, 'C');
+
+        ctx.save();
+        ctx.translate(center, center);
+        ctx.rotate(typeof mouseX === 'number' ? -mouseX : 0);
+        ctx.fillStyle = '#67e8f9';
+        ctx.strokeStyle = '#082f49';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, -8); ctx.lineTo(6, 6); ctx.lineTo(0, 3); ctx.lineTo(-6, 6); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.restore();
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(center, center, center - 2, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(125, 211, 252, .9)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 9px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(inCity ? 'BRIGHT CITY' : 'OUTPOST', center, 14);
+    }
+
+    function minimapFrame() {
+        try {
+            if (worldScene && typeof gameState !== 'undefined' && gameState === 'PLAYING') drawDetailedMinimap();
+        } catch (error) { /* The normal game HUD remains available if a transition resets the canvas. */ }
+        window.requestAnimationFrame(minimapFrame);
+    }
+    window.requestAnimationFrame(minimapFrame);
+
+    salvageButton.addEventListener('click', interactWithCarAndParts);
+    rideButton.addEventListener('click', toggleRide);
+    cityButton.addEventListener('click', toggleCity);
     window.addEventListener('keydown', event => {
-        if (event.key.toLowerCase() === 'e' && gameState === 'PLAYING' && !ui.contains(event.target)) collectNearest();
+        if (event.key.toLowerCase() === 'e' && gameState === 'PLAYING' && !ui.contains(event.target)) interactWithCarAndParts();
+        if (event.key.toLowerCase() === 'f' && gameState === 'PLAYING' && isRepaired() && !ui.contains(event.target)) toggleRide();
     });
 
     window.setInterval(() => {
@@ -454,10 +667,15 @@
             ui.hidden = typeof gameState === 'undefined' || gameState !== 'PLAYING';
             if (!worldScene || worldScene !== scene || gameState !== 'PLAYING') return;
             const part = nearestPart();
-            salvageButton.disabled = !part;
-            nearby.textContent = part
-                ? `Nearby: ${part.userData.salvagePart} · tap to salvage or press E`
-                : (collected.size < PARTS.length ? 'Find the glowing parts around the wreck.' : (nearby.textContent.includes('recovered') ? nearby.textContent : ''));
+            const tireReadyToInstall = !inCity && isNearWreck() && Boolean(carriedTire());
+            salvageButton.disabled = !part && !tireReadyToInstall;
+            nearby.textContent = tireReadyToInstall
+                ? `At the wreck · install ${carriedTire()} here.`
+                : (part
+                    ? `Nearby: ${part.userData.salvagePart} · tap to collect or press E`
+                    : (isRepaired()
+                        ? (driving ? 'In car · move to drive. Press F or EXIT CAR to get out.' : 'Car ready · press ENTER CAR or F to drive.')
+                        : 'Find the glowing parts; tires must be fitted at the wreck.'));
             if (driveCar && typeof player !== 'undefined') {
                 if (driving) {
                     const yaw = typeof mouseX === 'number' ? mouseX : 0;
