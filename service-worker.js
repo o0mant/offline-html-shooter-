@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xc-shooter-shell-v5';
+const CACHE_NAME = 'xc-shooter-shell-v9';
 const APP_FILES = ['./', './index.html', './styles.css', './script.js', './manifest.json', './app-icon.svg'];
 
 self.addEventListener('install', event => {
