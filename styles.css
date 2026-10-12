@@ -1173,5 +1173,38 @@ button:focus-visible {
   .combat-notice-show { animation-duration: 0.01ms; }
 }
 
+.install-app-button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid rgba(251, 191, 36, 0.55);
+  border-radius: 0.7rem;
+  background: linear-gradient(110deg, rgba(120, 53, 15, 0.86), rgba(30, 41, 59, 0.96));
+  color: #fde68a;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+}
+
+.install-app-button:hover:not(:disabled) {
+  border-color: #fbbf24;
+  background: linear-gradient(110deg, rgba(180, 83, 9, 0.95), rgba(30, 41, 59, 0.98));
+}
+
+.install-app-button:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.install-app-feedback {
+  min-height: 1.1rem;
+  margin: 0.4rem 0 0;
+  color: #94a3b8;
+  font-size: 0.64rem;
+  line-height: 1.4;
+}
+
 
 
