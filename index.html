@@ -303,24 +303,29 @@
             <div class="flex justify-between items-center mb-5">
                 <div>
                     <h2 class="text-2xl font-black text-amber-300">OUTPOST ARMORY</h2>
-                    <p class="text-sm text-slate-400">Spend kill points on weapons and ammunition.</p>
+                    <p class="text-sm text-slate-400">Browse weapons, ammo, optics, and compatible loadout add-ons.</p>
                 </div>
                 <button id="closeEquipmentButton" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-bold" type="button">CLOSE</button>
             </div>
             <div class="grid gap-5">
                 <section id="inventorySection" class="bg-slate-950/70 border border-slate-700 rounded-xl p-4">
                     <h3 class="text-lg font-bold text-sky-300 mb-3">INVENTORY</h3>
-                    <p class="text-xs text-slate-400 mb-3">Your owned weapons. Open the armory from the pause menu to shop.</p>
+                    <p class="text-xs text-slate-400 mb-3">Check your loaded rounds, reserve ammo, compatible attachments, and top-rail fit.</p>
                     <div id="inventoryList" class="space-y-2"></div>
+                    <div id="inventoryDetails" class="inventory-details" aria-live="polite"></div>
                 </section>
                 <section id="storeSection" class="bg-slate-950/70 border border-amber-900/70 rounded-xl p-4">
                     <h3 class="text-lg font-bold text-amber-300 mb-3">WEAPON STORE</h3>
+                    <p class="armory-section-label">OPTICS · FIT TO THE TOP RAIL</p>
                     <div id="storeList" class="grid sm:grid-cols-2 gap-3"></div>
                     <div class="optic-store-grid" aria-label="Weapon optics">
                         <button id="buyCarbineOpticButton" class="optic-store-button" type="button">BUY 2× CARBINE OPTIC <span>300 points</span><small>Compatible with the Scout Carbine only</small></button>
                         <button id="buySniperScopeButton" class="optic-store-button sniper-optic" type="button">BUY 4× SNIPER SCOPE <span>500 points</span><small>Compatible with the AX-50 Sniper Rifle only</small></button>
                     </div>
                     <p id="opticStoreFeedback" class="mt-2 min-h-5 text-xs text-slate-400" role="status" aria-live="polite"></p>
+                    <p class="armory-section-label addon-label">WEAPON ADD-ONS · LOADOUT UPGRADES</p>
+                    <div id="addonStoreGrid" class="addon-store-grid" aria-label="Weapon attachments"></div>
+                    <p id="addonStoreFeedback" class="mt-2 min-h-5 text-xs text-slate-400" role="status" aria-live="polite"></p>
                     <button id="buyAmmoButton" class="w-full mt-3 p-3 rounded-lg border border-emerald-700 bg-emerald-950/70 hover:bg-emerald-900 text-left text-emerald-200" type="button">Buy +60 reserve ammo <span class="float-right font-bold">100 points</span></button>
                 </section>
             </div>
@@ -670,6 +675,7 @@
                     // Keep each player's saved match separate in this browser.
                     SAVE_KEY = `dawnSurvivorSave:${encodeURIComponent(signedInAccount.email)}`;
                     loadOwnedOptics();
+                    loadOwnedAddons();
                     buildWeaponMesh();
                     passwordInput.value = '';
                     document.getElementById('accountScreen').classList.add('hidden');
@@ -794,6 +800,7 @@
         function persistOwnedOptics() {
             try {
                 localStorage.setItem(`${SAVE_KEY}:optics`, JSON.stringify(Array.from(ownedOptics)));
+                saveGameProgress(false);
             } catch (error) {
                 document.getElementById('opticStoreFeedback').textContent = 'Could not save optic ownership in this browser.';
             }
@@ -852,6 +859,95 @@
             configure('CARBINE', 'buyCarbineOpticButton', '2× CARBINE OPTIC');
             configure('SNIPER', 'buySniperScopeButton', '4× SNIPER SCOPE');
             refreshOpticStoreButtons();
+        }
+
+        const ADDON_CATALOG = [
+            { id: 'RED_DOT', name: 'Reflex Red-Dot', icon: '◉', slot: 'TOP RAIL', price: 220, compatible: ['RIFLE', 'SMG', 'BURST'], detail: 'Fast close-range aiming · Rifle / SMG / Burst' },
+            { id: 'SUPPRESSOR', name: 'Compact Suppressor', icon: '▰', slot: 'MUZZLE', price: 280, compatible: ['PISTOL', 'SMG', 'CARBINE'], detail: 'Low-profile muzzle fit · Pistol / SMG / Carbine' },
+            { id: 'LASER', name: 'Tactical Laser', icon: '✳', slot: 'SIDE RAIL', price: 180, compatible: ['PISTOL', 'SMG', 'CARBINE', 'REVOLVER'], detail: 'Side-rail accessory · Pistol / SMG / Carbine / Revolver' },
+            { id: 'EXTENDED_MAG', name: 'Extended Magazine', icon: '▤', slot: 'MAGAZINE', price: 350, compatible: ['PISTOL', 'RIFLE', 'SMG', 'CARBINE', 'BURST'], detail: 'Magazine-slot upgrade · Pistol / Rifle / SMG / Carbine / Burst' }
+        ];
+        let ownedAddons = new Set();
+
+        function persistOwnedAddons() {
+            try {
+                localStorage.setItem(`${SAVE_KEY}:addons`, JSON.stringify(Array.from(ownedAddons)));
+                saveGameProgress(false);
+            } catch (error) {
+                document.getElementById('addonStoreFeedback').textContent = 'Could not save add-on inventory in this browser.';
+            }
+        }
+
+        function loadOwnedAddons() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(`${SAVE_KEY}:addons`) || '[]');
+                ownedAddons = new Set(Array.isArray(saved) ? saved.filter(id => ADDON_CATALOG.some(item => item.id === id)) : []);
+            } catch (error) {
+                ownedAddons = new Set();
+            }
+            renderAddonStore();
+        }
+
+        function renderAddonStore() {
+            const grid = document.getElementById('addonStoreGrid');
+            if (!grid) return;
+            grid.innerHTML = ADDON_CATALOG.map(item => {
+                const owned = ownedAddons.has(item.id);
+                return `<button class="addon-card" type="button" data-addon-id="${item.id}" ${owned ? 'disabled' : ''}>
+                    <span class="addon-icon" aria-hidden="true">${item.icon}</span>
+                    <span class="addon-copy"><strong>${item.name}</strong><small>${item.detail}</small><em>${item.slot} · ${owned ? 'OWNED' : `${item.price} POINTS`}</em></span>
+                    <span class="addon-state" aria-hidden="true">${owned ? '✓' : '+'}</span>
+                </button>`;
+            }).join('');
+        }
+
+        function refreshInventoryDetails() {
+            const panel = document.getElementById('inventoryDetails');
+            if (!panel) return;
+            const weaponKey = player.currentWeaponKey;
+            const weapon = WEAPONS[weaponKey];
+            if (!weapon) return;
+            const current = document.getElementById('ammoCurrent')?.textContent || player.ammo;
+            const reserve = document.getElementById('ammoReserve')?.textContent || player.reserveAmmo;
+            const optic = weaponKey === 'CARBINE' && ownedOptics.has('CARBINE')
+                ? '2× Scout optic · TOP RAIL'                     : weaponKey === 'SNIPER' && ownedOptics.has('SNIPER')
+                    ? '4× AX-50 scope · TOP RAIL' : ownedAddons.has('RED_DOT') && ['RIFLE', 'SMG', 'BURST'].includes(weaponKey)
+                        ? 'Reflex red-dot · TOP RAIL' : 'No optic fitted · TOP RAIL EMPTY';
+            const fittings = ADDON_CATALOG.filter(item => item.compatible.includes(weaponKey) && ownedAddons.has(item.id));
+            const fittingText = fittings.length
+                ? fittings.map(item => `<span class="fitting-chip"><b>${item.icon}</b> ${item.name} · ${item.slot}</span>`).join('')
+                : '<span class="fitting-empty">No owned add-ons compatible with this weapon.</span>';
+            panel.innerHTML = `<div class="inventory-detail-heading"><span>ACTIVE LOADOUT</span><span>${weapon.name}</span></div>
+                <div class="ammo-detail-card"><span class="ammo-detail-icon" aria-hidden="true">▤</span><div><small>AVAILABLE AMMUNITION</small><strong>${current} <i>/</i> ${reserve}</strong><em>Loaded magazine / reserve · ${Number(current) + Number(reserve)} total rounds</em></div></div>
+                <div class="weapon-fitting"><div class="fitting-gun" aria-hidden="true"><span class="gun-scope ${optic.includes('EMPTY') ? 'mount-empty' : ''}">${optic.includes('EMPTY') ? '+' : '◉'}</span><span class="gun-rail"></span><span class="gun-barrel"></span><span class="gun-grip"></span></div><div class="fitting-description"><small>TOP RAIL / OPTIC MOUNT</small><strong>${optic}</strong><span>Optics only fit compatible weapons.</span></div></div>
+                <div class="fitting-list">${fittingText}</div>`;
+        }
+
+        function setupExpandedArmory() {
+            const grid = document.getElementById('addonStoreGrid');
+            grid.addEventListener('click', event => {
+                const button = event.target.closest('[data-addon-id]');
+                if (!button || button.disabled) return;
+                const item = ADDON_CATALOG.find(addon => addon.id === button.dataset.addonId);
+                const feedback = document.getElementById('addonStoreFeedback');
+                if (!item) return;
+                if (points < item.price) {
+                    feedback.textContent = `Not enough points for ${item.name}.`;
+                    return;
+                }
+                points -= item.price;
+                ownedAddons.add(item.id);
+                persistOwnedAddons();
+                renderAddonStore();
+                refreshInventoryDetails();
+                document.getElementById('storePoints').textContent = points;
+                document.getElementById('pointsDisplay').textContent = points;
+                feedback.textContent = `${item.name} added to your local loadout inventory.`;
+            });
+            loadOwnedAddons();
+            window.setInterval(() => {
+                if (!document.getElementById('equipmentScreen').classList.contains('hidden')) refreshInventoryDetails();
+            }, 350);
         }
 
         function init() {
@@ -1041,31 +1137,16 @@
             });
             setupTouchControls();
             setupOpticStore();
+            setupExpandedArmory();
             setupAccountAuth();
 
-            // Save normally through the existing handler, then return to mode selection.
-            document.getElementById('saveGameButton').addEventListener('click', () => {
-                window.setTimeout(() => {
-                    gameState = 'START';
-                    keys = {};
-                    touchMoveX = 0;
-                    touchMoveY = 0;
-                    virtualSprint = false;
-                    isMouseDown = false;
-                    player.isADS = false;
-                    document.getElementById('adsOverlay').style.display = 'none';
-                    document.getElementById('hud').classList.add('hidden');
-                    document.getElementById('pauseScreen').classList.add('hidden');
-                    document.getElementById('equipmentScreen').classList.add('hidden');
-                    document.getElementById('gameOverScreen').classList.add('hidden');
-                    document.getElementById('mobileControls').classList.remove('active');
-                    document.getElementById('startScreen').classList.remove('hidden');
-                    document.getElementById('platformStep').classList.add('hidden');
-                    document.getElementById('modeStep').classList.remove('hidden');
-                    document.getElementById('saveFeedback').textContent = '';
-                    if (document.pointerLockElement) document.exitPointerLock();
-                }, 0);
+            // Keep the signed-in player's latest match available for Continue.
+            window.setInterval(() => saveGameProgress(false), 10000);
+            window.addEventListener('pagehide', () => saveGameProgress(false));
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') saveGameProgress(false);
             });
+
         }
 
 
@@ -1857,8 +1938,10 @@
                 ownedWeapons = new Set((savedGame.ownedWeapons || ['RIFLE']).filter(key => WEAPONS[key]));
                 ownedWeapons.add('RIFLE');
                 weaponStates = savedGame.weaponStates || weaponStates;
-                player.health = Math.max(1, Math.min(player.maxHealth, Number(savedGame.health) || player.maxHealth));
-                player.stamina = Math.max(0, Math.min(player.maxStamina, Number(savedGame.stamina) || player.maxStamina));
+                const savedHealth = Number(savedGame.health);
+                const savedStamina = Number(savedGame.stamina);
+                player.health = Math.max(1, Math.min(player.maxHealth, Number.isFinite(savedHealth) ? savedHealth : player.maxHealth));
+                player.stamina = Math.max(0, Math.min(player.maxStamina, Number.isFinite(savedStamina) ? savedStamina : player.maxStamina));
                 player.x = Number(savedGame.x) || 0;
                 player.z = Number(savedGame.z) || 0;
                 mouseX = Number(savedGame.mouseX) || 0;
@@ -1907,9 +1990,8 @@
             if (selectedPlatform === 'WINDOWS') document.body.requestPointerLock();
         }
 
-        function saveGame() {
-            const feedback = document.getElementById('saveFeedback');
-            if (gameState !== 'PAUSED') return;
+        function saveGameProgress(showFeedback = false) {
+            if (!['PLAYING', 'PAUSED', 'MENU', 'GAMEOVER'].includes(gameState)) return false;
             const saveData = {
                 gameMode, score, points, wave, currentMissionIndex,
                 health: player.health, stamina: player.stamina, x: player.x, z: player.z,
@@ -1923,12 +2005,21 @@
             };
             try {
                 localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
-                feedback.textContent = 'Progress saved. Continue from the main menu anytime.';
-                document.getElementById('startFeedback').textContent = 'Saved progress is ready to continue.';
                 updateContinueButton();
+                if (showFeedback) {
+                    document.getElementById('saveFeedback').textContent = 'Progress saved. Continue from the main menu anytime.';
+                    document.getElementById('startFeedback').textContent = 'Saved progress is ready to continue.';
+                }
+                return true;
             } catch (error) {
-                feedback.textContent = 'Unable to save progress in this browser.';
+                if (showFeedback) document.getElementById('saveFeedback').textContent = 'Unable to save progress in this browser.';
+                return false;
             }
+        }
+
+        function saveGame() {
+            if (gameState !== 'PAUSED') return;
+            saveGameProgress(true);
         }
 
         function updateContinueButton() {
@@ -1956,6 +2047,7 @@
         }
 
         function exitGame() {
+            saveGameProgress(false);
             if (document.pointerLockElement) document.exitPointerLock();
             document.getElementById('mobileControls').classList.remove('active');
             gameState = 'START';
@@ -2239,6 +2331,7 @@
                                 document.getElementById('pointsDisplay').innerText = points;
                                 updateScoreProgress();
                                 addLog(z.isBrute ? 'Brute eliminated! +200 points.' : 'Zombie eliminated! +100 points.');
+                                saveGameProgress(false);
                             }
                             break;
                         }
@@ -2334,8 +2427,11 @@
         document.getElementById('loadGameButton').addEventListener('click', loadSavedGame);
         document.getElementById('exitGameButton').addEventListener('click', exitGame);
         document.getElementById('saveGameButton').addEventListener('click', () => {
-            saveGame();
+            const saved = saveGameProgress(true);
             exitGame();
+            document.getElementById('startFeedback').textContent = saved
+                ? 'Progress saved. Continue from the main menu anytime.'
+                : 'Unable to save progress in this browser.';
         });
         document.getElementById('restartButton').addEventListener('click', () => startGame(gameMode));
         document.getElementById('inventoryButton').addEventListener('click', () => openEquipment('inventory'));
@@ -2360,6 +2456,7 @@
             }
             points -= 100;
             player.reserveAmmo += 60;
+            saveGameProgress(false);
             document.getElementById('pointsDisplay').innerText = points;
             updateAmmoBar();
             renderEquipment();
