@@ -14,6 +14,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
+    <script src="inventory.js" defer></script>
     <style>
         body {
             margin: 0;
@@ -169,12 +170,12 @@
         <section class="intro-card">
             <p class="intro-kicker">A SURVIVAL EXPERIENCE</p>
             <h1 id="introTitle">XC <span>SHOOTER</span></h1>
-            <p class="intro-lead">Hold the outpost. Survive the horde. Find a way forward.</p>
-            <p class="intro-description">Take on the infected through the night, explore four dangerous biomes, recover parts to rebuild your car, and reach the Bright City.</p>
-            <div class="intro-highlights" aria-label="Game features">
-                <div><strong>01</strong><span>Survive escalating zombie waves</span></div>
-                <div><strong>02</strong><span>Explore forest, desert, marsh, and frost</span></div>
-                <div><strong>03</strong><span>Salvage, repair, and drive to the city</span></div>
+            <p class="intro-lead">Restore the uplink. Recover the intel. Make it to extraction.</p>
+            <p class="intro-description">Fight through an escalating infected outbreak in a tactical operation: activate a field relay, clear hostiles, secure the supply cache, then hold the extraction zone. Explore four biomes and use the car to move between threats.</p>
+            <div class="intro-highlights" aria-label="Operation objectives">
+                <div><strong>01</strong><span>Restore the communications relay under pressure</span></div>
+                <div><strong>02</strong><span>Eliminate hostiles and recover field supplies</span></div>
+                <div><strong>03</strong><span>Hold extraction until the evacuation is secure</span></div>
             </div>
             <section class="developer-card" aria-labelledby="developerTitle">
                 <div class="developer-avatar" aria-hidden="true">V60</div>
@@ -248,8 +249,8 @@
     <!-- HUD OVERLAY -->
     <div id="hud" class="absolute inset-0 pointer-events-none p-6 flex flex-col justify-between hidden z-10">
         <div id="missionPanel" class="bg-slate-950/85 border border-emerald-500/40 rounded-xl px-4 py-3 text-center shadow-xl">
-            <div id="missionTitle" class="text-[10px] font-black uppercase tracking-widest text-emerald-300">Mission 1: Thin the Horde</div>
-            <div id="missionObjective" class="mt-1 text-xs font-bold text-slate-100">Eliminate 8 zombies (0/8)</div>
+            <div id="missionTitle" class="text-[10px] font-black uppercase tracking-widest text-emerald-300">OPERATION LAST LIGHT</div>
+            <div id="missionObjective" class="mt-1 text-xs font-bold text-slate-100">Restore the field relay</div>
         </div>
         <!-- Top Bar -->
         <div class="flex justify-between items-start">
@@ -315,8 +316,8 @@
                 <div class="flex flex-col items-center bg-slate-900/85 backdrop-blur border border-slate-800 p-3 rounded-2xl shadow-xl">
                 <div class="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-2">Sunrise Radar</div>
                 <button id="fullMapButton" class="full-map-button" type="button" aria-haspopup="dialog" aria-controls="fullMapScreen">OPEN FULL MAP</button>
-                <canvas id="minimapCanvas" width="220" height="220" aria-label="Detailed radar showing the player, zombies, vehicle, buildings, and salvage parts"></canvas>
-                <div class="minimap-legend"><span><i class="legend-player"></i>YOU</span><span><i class="legend-zombie"></i>HOSTILE</span><span><i class="legend-part"></i>PART</span></div>
+                <canvas id="minimapCanvas" width="220" height="220" aria-label="Detailed radar showing the player, zombies, vehicle, and buildings"></canvas>
+                <div class="minimap-legend"><span><i class="legend-player"></i>YOU</span><span><i class="legend-zombie"></i>HOSTILE</span><span><i class="legend-car"></i>CAR</span></div>
                 </div>
             </div>
         </div>
@@ -346,11 +347,11 @@
     <!-- Full-screen world map; press M or use the radar button to open it. -->
     <section id="fullMapScreen" class="full-map-screen" role="dialog" aria-modal="true" aria-labelledby="fullMapTitle" hidden>
         <header class="full-map-header">
-            <div><h2 id="fullMapTitle">WORLD MAP</h2><p>Outpost, biomes, salvage, hostiles, and the city route</p></div>
+            <div><h2 id="fullMapTitle">WORLD MAP</h2><p>Outpost, biomes, hostiles, and the city route</p></div>
             <button id="closeFullMapButton" type="button">CLOSE <span>· M / ESC</span></button>
         </header>
         <canvas id="fullMapCanvas" width="800" height="800" aria-label="Full world map showing the outpost, four biomes, city, player, hostiles, and salvage parts"></canvas>
-        <div class="full-map-legend"><span>YOU</span><span>HOSTILE</span><span>ENGINE</span><span>BATTERY</span><span>FUEL</span><span>TIRES</span><span>WRECK / CAR</span></div>
+        <div class="full-map-legend"><span>YOU</span><span>HOSTILE</span><span>VEHICLE</span><span>BRIGHT CITY</span></div>
     </section>
 
     <!-- Inventory and weapon store -->
@@ -365,10 +366,11 @@
             </div>
             <div class="grid gap-5">
                 <section id="inventorySection" class="bg-slate-950/70 border border-slate-700 rounded-xl p-4">
-                    <h3 class="text-lg font-bold text-sky-300 mb-3">INVENTORY</h3>
-                    <p class="text-xs text-slate-400 mb-3">Check your loaded rounds, reserve ammo, compatible attachments, and top-rail fit.</p>
-                    <div id="inventoryList" class="space-y-2"></div>
-                    <div id="inventoryDetails" class="inventory-details" aria-live="polite"></div>
+                    <h3 class="text-lg font-bold text-sky-300 mb-3">OWNED WEAPONS &amp; LOADOUT</h3>
+                    <p class="text-xs text-slate-400 mb-3">Your weapons, usable reserve ammo, and purchased gear slots.</p>
+                    <div id="ownedLoadoutInventory" class="owned-loadout-inventory" aria-live="polite"></div>
+                    <div id="inventoryList" class="space-y-2" aria-hidden="true"></div>
+                    <div id="inventoryDetails" class="inventory-details" aria-hidden="true"></div>
                 </section>
                 <section id="storeSection" class="bg-slate-950/70 border border-amber-900/70 rounded-xl p-4">
                     <h3 class="text-lg font-bold text-amber-300 mb-3">WEAPON STORE</h3>
@@ -382,7 +384,7 @@
                     <p class="armory-section-label addon-label">WEAPON ADD-ONS · LOADOUT UPGRADES</p>
                     <div id="addonStoreGrid" class="addon-store-grid" aria-label="Weapon attachments"></div>
                     <p id="addonStoreFeedback" class="mt-2 min-h-5 text-xs text-slate-400" role="status" aria-live="polite"></p>
-                    <button id="buyAmmoButton" class="w-full mt-3 p-3 rounded-lg border border-emerald-700 bg-emerald-950/70 hover:bg-emerald-900 text-left text-emerald-200" type="button">Buy +60 reserve ammo <span class="float-right font-bold">100 points</span></button>
+                    <button id="buyAmmoButton" class="w-full mt-3 p-3 rounded-lg border border-emerald-700 bg-emerald-950/70 hover:bg-emerald-900 text-left text-emerald-200" type="button">Buy +60 universal reserve rounds <span class="float-right font-bold">100 points</span></button>
                 </section>
             </div>
             <p class="mt-4 text-center text-sm font-bold text-emerald-300">Available points: <span id="storePoints">0</span></p>
@@ -618,6 +620,10 @@
         let ambientLight, sunLight, rainField;
         let weatherIndex = 0;
         let weatherTimer = 0;
+        let weatherTransition = 1;
+        let weatherChangeInterval = 50;
+        let weatherTarget = null;
+        let weatherFrom = null;
         let points = 0;
         let ownedWeapons = new Set(['RIFLE']);
         let weaponStates = {};
@@ -707,8 +713,8 @@
                 : 'Selected: Phone · Full touch controls';
             document.getElementById('modeStepTitle').textContent = `${windowsSelected ? 'Windows' : 'Phone'} selected — choose a game mode`;
             document.getElementById('controlInstructions').innerHTML = windowsSelected
-                ? '<h3 class="tutorial-heading">CONTROLS TUTORIAL</h3><div><strong class="text-amber-400">W, A, S, D:</strong> Move · <strong class="text-amber-400">SHIFT:</strong> Sprint · <strong class="text-amber-400">SPACE:</strong> Jump</div><div><strong class="text-amber-400">MOUSE:</strong> Look around · <strong class="text-amber-400">LEFT CLICK:</strong> Fire · <strong class="text-amber-400">RIGHT CLICK:</strong> Aim down sights</div><div><strong class="text-amber-400">R:</strong> Reload · <strong class="text-amber-400">E:</strong> Collect parts / install tires · <strong class="text-amber-400">F:</strong> Enter or exit repaired car</div><div><strong class="text-amber-400">ESC:</strong> Pause · Use the on-screen prompt near the wreck to salvage or install parts</div>'
-                : '<h3 class="tutorial-heading">TOUCH CONTROLS TUTORIAL</h3><div><strong class="text-amber-400">LEFT JOYSTICK:</strong> Move · hold <strong class="text-amber-400">SPRINT</strong> to run</div><div><strong class="text-amber-400">SWIPE RIGHT SIDE:</strong> Look around · tap <strong class="text-amber-400">FIRE / AIM</strong> to shoot or aim</div><div><strong class="text-amber-400">JUMP / RELOAD / PICK UP:</strong> Tap the matching buttons</div><div><strong class="text-amber-400">WRECK &amp; PARTS:</strong> Tap the on-screen salvage button nearby; install each tire at the wreck, then tap <strong class="text-amber-400">ENTER CAR</strong> to drive</div>';
+                ? '<h3 class="tutorial-heading">CONTROLS TUTORIAL</h3><div><strong class="text-amber-400">W, A, S, D:</strong> Move · <strong class="text-amber-400">SHIFT:</strong> Sprint · <strong class="text-amber-400">SPACE:</strong> Jump</div><div><strong class="text-amber-400">MOUSE:</strong> Look around · <strong class="text-amber-400">LEFT CLICK:</strong> Fire · <strong class="text-amber-400">RIGHT CLICK:</strong> Aim down sights</div><div><strong class="text-amber-400">R:</strong> Reload · <strong class="text-amber-400">F:</strong> Enter or exit the car when nearby</div><div><strong class="text-amber-400">ESC:</strong> Pause · Use WASD to drive once inside</div>'
+                : '<h3 class="tutorial-heading">TOUCH CONTROLS TUTORIAL</h3><div><strong class="text-amber-400">LEFT JOYSTICK:</strong> Move · hold <strong class="text-amber-400">SPRINT</strong> to run</div><div><strong class="text-amber-400">SWIPE RIGHT SIDE:</strong> Look around · tap <strong class="text-amber-400">FIRE / AIM</strong> to shoot or aim</div><div><strong class="text-amber-400">JUMP / RELOAD / PICK UP:</strong> Tap the matching buttons</div><div><strong class="text-amber-400">CAR:</strong> Walk near it and tap <strong class="text-amber-400">ENTER CAR</strong> to drive; tap <strong class="text-amber-400">EXIT CAR</strong> to get out</div>';
             document.getElementById('platformStep').classList.add('hidden');
             document.getElementById('modeStep').classList.remove('hidden');
             document.getElementById('startFeedback').textContent = '';
@@ -1173,7 +1179,7 @@
             }
             const rainGeometry = new THREE.BufferGeometry();
             rainGeometry.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
-            const rainMaterial = new THREE.LineBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.65 });
+            const rainMaterial = new THREE.LineBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0 });
             rainField = new THREE.LineSegments(rainGeometry, rainMaterial);
             rainField.userData.offsets = rainOffsets;
             rainField.visible = false;
@@ -1322,46 +1328,70 @@
 
 
         const WEATHER_TYPES = ['Clear', 'Rain', 'Fog'];
+        const WEATHER_PRESETS = [
+            { sky: 0xfde047, fog: 0xf59e0b, density: 0.006, ambient: 0.7, sun: 1.4, rain: 0 },
+            { sky: 0x64748b, fog: 0x64748b, density: 0.009, ambient: 0.48, sun: 0.65, rain: 0.65 },
+            { sky: 0x9ca3af, fog: 0x9ca3af, density: 0.018, ambient: 0.62, sun: 0.8, rain: 0 }
+        ];
 
         function setWeather(index) {
-            weatherIndex = index % WEATHER_TYPES.length;
-            const weather = WEATHER_TYPES[weatherIndex];
-            document.getElementById('weatherDisplay').innerText = weather;
-            if (weather === 'Clear') {
-                scene.background.set(0xfde047);
-                scene.fog = new THREE.FogExp2(0xf59e0b, 0.006);
-                ambientLight.intensity = 0.7;
-                sunLight.intensity = 1.4;
-                rainField.visible = false;
-            } else if (weather === 'Rain') {
-                scene.background.set(0x64748b);
-                scene.fog = new THREE.FogExp2(0x64748b, 0.009);
-                ambientLight.intensity = 0.48;
-                sunLight.intensity = 0.65;
-                rainField.visible = true;
-            } else {
-                scene.background.set(0x9ca3af);
-                scene.fog = new THREE.FogExp2(0x9ca3af, 0.018);
-                ambientLight.intensity = 0.62;
-                sunLight.intensity = 0.8;
-                rainField.visible = false;
-            }
+            weatherIndex = ((index % WEATHER_TYPES.length) + WEATHER_TYPES.length) % WEATHER_TYPES.length;
+            const preset = WEATHER_PRESETS[weatherIndex];
+            document.getElementById('weatherDisplay').innerText = WEATHER_TYPES[weatherIndex];
+            if (!scene || !ambientLight || !sunLight || !rainField) return;
+
+            if (!(scene.fog instanceof THREE.FogExp2)) scene.fog = new THREE.FogExp2(scene.fog?.color || preset.fog, 0.006);
+            weatherFrom = {
+                sky: scene.background && scene.background.isColor ? scene.background.clone() : new THREE.Color(preset.sky),
+                fog: scene.fog.color.clone(),
+                density: scene.fog.density,
+                ambient: ambientLight.intensity,
+                sun: sunLight.intensity,
+                rain: rainField.material.opacity
+            };
+            weatherTarget = {
+                sky: new THREE.Color(preset.sky),
+                fog: new THREE.Color(preset.fog),
+                density: preset.density,
+                ambient: preset.ambient,
+                sun: preset.sun,
+                rain: preset.rain
+            };
+            weatherTransition = 0;
+            rainField.visible = weatherFrom.rain > 0 || preset.rain > 0;
         }
 
         function updateWeather(dt) {
             weatherTimer += dt;
-            if (weatherTimer >= 25) {
+            if (weatherTimer >= weatherChangeInterval) {
                 weatherTimer = 0;
+                weatherChangeInterval = 45 + Math.random() * 40;
                 setWeather(weatherIndex + 1);
-                addLog(`Weather changed: ${WEATHER_TYPES[weatherIndex]}.`);
+                addLog(`Weather shifting: ${WEATHER_TYPES[weatherIndex]}.`);
+            }
+
+            if (weatherTarget && weatherFrom) {
+                weatherTransition = Math.min(1, weatherTransition + dt / 9);
+                const blend = weatherTransition * weatherTransition * (3 - 2 * weatherTransition);
+                scene.background.copy(weatherFrom.sky).lerp(weatherTarget.sky, blend);
+                scene.fog.color.copy(weatherFrom.fog).lerp(weatherTarget.fog, blend);
+                scene.fog.density = THREE.MathUtils.lerp(weatherFrom.density, weatherTarget.density, blend);
+                ambientLight.intensity = THREE.MathUtils.lerp(weatherFrom.ambient, weatherTarget.ambient, blend);
+                sunLight.intensity = THREE.MathUtils.lerp(weatherFrom.sun, weatherTarget.sun, blend);
+                rainField.material.opacity = THREE.MathUtils.lerp(weatherFrom.rain, weatherTarget.rain, blend);
+                rainField.visible = weatherTransition < 1 || weatherTarget.rain > 0;
             }
             if (!rainField.visible) return;
 
             const offsets = rainField.userData.offsets;
             const positions = rainField.geometry.attributes.position.array;
             for (let i = 0; i < offsets.length / 3; i++) {
-                offsets[i * 3 + 1] -= dt * 22;
-                if (offsets[i * 3 + 1] < 1) offsets[i * 3 + 1] = 18 + Math.random() * 8;
+                offsets[i * 3 + 1] -= dt * 18;
+                offsets[i * 3] += dt * 0.45;
+                if (offsets[i * 3 + 1] < 1) {
+                    offsets[i * 3 + 1] = 18 + Math.random() * 8;
+                    offsets[i * 3] = (Math.random() - 0.5) * 45;
+                }
                 const x = player.x + offsets[i * 3];
                 const y = offsets[i * 3 + 1];
                 const z = player.z + offsets[i * 3 + 2];
@@ -1369,9 +1399,9 @@
                 positions[p] = x;
                 positions[p + 1] = y;
                 positions[p + 2] = z;
-                positions[p + 3] = x + 0.12;
-                positions[p + 4] = y - 0.75;
-                positions[p + 5] = z + 0.12;
+                positions[p + 3] = x + 0.08;
+                positions[p + 4] = y - 0.62;
+                positions[p + 5] = z + 0.08;
             }
             rainField.geometry.attributes.position.needsUpdate = true;
         }
