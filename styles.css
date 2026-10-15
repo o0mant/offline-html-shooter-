@@ -1566,6 +1566,7 @@ body.w-screen.h-screen {
 .legend-player { background: #67e8f9; color: #67e8f9; }
 .legend-zombie { background: #fb3d4b; color: #fb3d4b; }
 .legend-part { background: #fbbf24; color: #fbbf24; }
+.legend-car { background: #34d399; color: #34d399; }
 
 @media (max-width: 900px) {
   .minimap-legend { gap: 0.3rem; font-size: 0.46rem; }
@@ -1814,5 +1815,214 @@ body.w-screen.h-screen {
   .developer-instagram { grid-column: 1 / -1; text-align: center; }
 }
 
+/* Tactical combat HUD polish */
+#hud [class~="bg-slate-900/85"],
+#hud [class~="bg-amber-950/85"] {
+  border-color: rgba(100, 116, 139, 0.5);
+  border-radius: 0.65rem;
+  background-image: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(3, 10, 18, 0.9));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48), inset 0 1px rgba(226, 232, 240, 0.06);
+}
 
+#hud [class~="bg-amber-950/85"] { border-color: rgba(34, 211, 238, 0.28); }
 
+#missionPanel {
+  border-radius: 0.4rem;
+  background: linear-gradient(100deg, rgba(3, 18, 27, 0.96), rgba(7, 24, 32, 0.92));
+  border-color: rgba(34, 211, 238, 0.48);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4), inset 3px 0 #22d3ee;
+}
+
+#crosshairContainer {
+  filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.38));
+  transition: transform 100ms ease, filter 100ms ease;
+}
+
+#crosshairContainer.combat-hit {
+  transform: translate(-50%, -50%) scale(1.28);
+  filter: drop-shadow(0 0 9px rgba(255, 255, 255, 0.9));
+}
+
+#crosshairContainer.combat-hit .crosshair-dot,
+#crosshairContainer.combat-hit .crosshair-line {
+  background: #f8fafc;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.95);
+}
+
+#combatFeedback {
+  position: fixed;
+  z-index: 16;
+  top: calc(50% + 34px);
+  left: 50%;
+  padding: 0.32rem 0.62rem;
+  border: 1px solid rgba(110, 231, 183, 0.5);
+  border-radius: 0.25rem;
+  background: rgba(2, 15, 19, 0.78);
+  color: #a7f3d0;
+  font: 850 0.58rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 5px);
+}
+
+.combat-feedback-show { animation: combatFeedbackPop 900ms ease-out both; }
+
+@keyframes combatFeedbackPop {
+  12%, 75% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -4px); }
+}
+
+#hud .wave-update { animation: waveCardPulse 700ms ease-out; }
+
+@keyframes waveCardPulse {
+  0%, 100% { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48); }
+  35% { border-color: rgba(248, 113, 113, 0.9); box-shadow: 0 0 24px rgba(248, 113, 113, 0.35); }
+}
+
+body.combat-critical #damageFlash {
+  opacity: 0.35 !important;
+  background: radial-gradient(circle, transparent 36%, rgba(220, 38, 38, 0.3) 68%, rgba(127, 29, 29, 0.7) 100%);
+  animation: criticalPulse 1.4s ease-in-out infinite alternate;
+}
+
+body.ammo-critical #ammoBarText,
+body.ammo-critical #ammoCurrent {
+  color: #f87171 !important;
+  text-shadow: 0 0 12px rgba(248, 113, 113, 0.65);
+}
+
+@keyframes criticalPulse {
+  from { opacity: 0.2; }
+  to { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combat-feedback-show,
+  #hud .wave-update,
+  body.combat-critical #damageFlash { animation: none; }
+}
+
+/* Owned weapon cards and per-weapon purchased gear slots. */
+#inventoryList,
+#inventoryDetails { display: none !important; }
+
+.owned-loadout-inventory {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.7rem;
+}
+
+.owned-weapon-card {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  border-radius: 0.8rem;
+  background: linear-gradient(135deg, rgba(8, 47, 73, 0.35), rgba(2, 6, 23, 0.76));
+}
+
+.owned-weapon-card.is-equipped {
+  border-color: rgba(52, 211, 153, 0.7);
+  box-shadow: inset 3px 0 #34d399;
+}
+
+.owned-weapon-icon {
+  display: grid;
+  place-items: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 0.7rem;
+  background: rgba(69, 26, 3, 0.42);
+  color: #fbbf24;
+}
+.owned-weapon-icon svg { width: 1.8rem; height: 1.8rem; }
+
+.owned-weapon-copy { display: grid; gap: 0.2rem; min-width: 0; }
+.owned-weapon-copy strong { color: #f8fafc; font-size: 0.68rem; }
+.owned-weapon-copy small { color: #94a3b8; font-size: 0.6rem; }
+.owned-weapon-equip,
+.loadout-slot select {
+  min-height: 34px;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  border-radius: 0.5rem;
+  background: #0f172a;
+  color: #bae6fd;
+  font-size: 0.62rem;
+  font-weight: 850;
+}
+.owned-weapon-equip { cursor: pointer; }
+.loadout-slot {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+.loadout-slot label { color: #fbbf24; font-size: 0.58rem; font-weight: 900; letter-spacing: 0.08em; }
+.loadout-slot select { width: 100%; }
+.inventory-empty { grid-column: 1 / -1; padding: 0.9rem; color: #94a3b8; font-size: 0.7rem; text-align: center; }
+
+/* Mission-focused operation tracker and hold-to-interact control. */
+#missionPanel {
+  padding-bottom: 0.7rem;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+#missionPanel.operation-complete {
+  border-color: rgba(52, 211, 153, 0.75);
+  box-shadow: 0 0 24px rgba(52, 211, 153, 0.2), inset 3px 0 #34d399;
+}
+
+.operation-progress {
+  height: 5px;
+  margin: 0.55rem 0 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.operation-progress[hidden] { display: none; }
+
+.operation-progress-fill {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22d3ee, #34d399);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.7);
+  transition: width 100ms linear;
+}
+
+.operation-action {
+  width: 100%;
+  min-height: 34px;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid rgba(34, 211, 238, 0.7);
+  border-radius: 0.45rem;
+  background: linear-gradient(110deg, rgba(8, 145, 178, 0.9), rgba(15, 118, 110, 0.92));
+  color: #ecfeff;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.operation-action[hidden] { display: none; }
+.operation-action:disabled { opacity: 0.45; cursor: default; }
+
+@media (max-width: 600px) {
+  #missionPanel { padding-bottom: 0.55rem; }
+  .operation-action { min-height: 38px; font-size: 0.58rem; }
+}
