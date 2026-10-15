@@ -169,31 +169,20 @@
     }
 })();
 
-// Salvage the wreck, repair the car, and travel to a brighter city district.
+// Spawn a freely drivable car and the optional Bright City destination.
 (() => {
-    const PARTS = [
-        { name: 'ENGINE', color: 0xf97316, x: -10, z: 8, shape: 'engine' },
-        { name: 'BATTERY', color: 0x22d3ee, x: 9, z: 11, shape: 'battery' },
-        { name: 'FUEL CAN', color: 0xef4444, x: 12, z: -7, shape: 'fuel' },
-        { name: 'TIRE 1', color: 0xfbbf24, x: -7, z: -10, shape: 'wheel' },
-        { name: 'TIRE 2', color: 0xfbbf24, x: 8, z: -12, shape: 'wheel' },
-        { name: 'TIRE 3', color: 0xfbbf24, x: -13, z: 1, shape: 'wheel' },
-        { name: 'TIRE 4', color: 0xfbbf24, x: 14, z: 4, shape: 'wheel' }
-    ];
-    const TIRE_NAMES = PARTS.filter(part => part.shape === 'wheel').map(part => part.name);
-    const collected = new Set();
-    const installedTires = new Set();
     let worldScene = null;
-    let wreckGroup = null;
     let driveCar = null;
     let cityGroup = null;
-    let partObjects = [];
     let inCity = false;
     let driving = false;
-    let lastPlayerPosition = null;
     let originalSpeed = null;
     let lastBoosted = new WeakSet();
     let savedAtmosphere = null;
+    let hookedRenderer = null;
+    let driveCameraPosition = null;
+    let driveCameraLookTarget = null;
+    let driveCameraLastTime = 0;
     const BIOMES = [
         { name: 'PINE FOREST', x: -112, z: -112, color: '#315844', edge: '#8bd69c', kind: 'forest' },
         { name: 'RED DUNES', x: 112, z: -112, color: '#a86e3d', edge: '#ffd08a', kind: 'desert' },
@@ -205,41 +194,19 @@
     ui.hidden = true;
     ui.className = 'salvage-panel';
     ui.setAttribute('aria-live', 'polite');
-    ui.innerHTML = '<strong class="salvage-heading">WRECK RECOVERY</strong><p class="salvage-objective"></p><p class="salvage-nearby"></p><button class="salvage-action" type="button">SALVAGE PART</button><button class="ride-action" type="button" hidden>ENTER CAR</button><button class="city-action" type="button" hidden>DRIVE TO BRIGHT CITY</button>';
+            ui.innerHTML = '<strong class="salvage-heading">VEHICLE</strong><p class="salvage-objective"></p><p class="salvage-nearby"></p><button class="ride-action" type="button" hidden>ENTER CAR</button><button class="city-action" type="button">TRAVEL TO BRIGHT CITY</button>';
     document.body.appendChild(ui);
     const objective = ui.querySelector('.salvage-objective');
     const nearby = ui.querySelector('.salvage-nearby');
-    const salvageButton = ui.querySelector('.salvage-action');
     const rideButton = ui.querySelector('.ride-action');
     const cityButton = ui.querySelector('.city-action');
 
-    function isRepaired() {
-        return PARTS.filter(part => part.shape !== 'wheel').every(part => collected.has(part.name))
-            && installedTires.size === TIRE_NAMES.length;
-    }
-
-    function carriedTire() {
-        return TIRE_NAMES.find(name => collected.has(name) && !installedTires.has(name));
-    }
-
     function paintObjective() {
-        const recoveredParts = PARTS.filter(part => part.shape !== 'wheel' && collected.has(part.name)).length;
-        if (!isRepaired()) {
-            objective.textContent = `Parts ${recoveredParts}/3 · tires installed ${installedTires.size}/4`;
-            salvageButton.hidden = false;
-            rideButton.hidden = true;
-            cityButton.hidden = true;
-            salvageButton.textContent = carriedTire() && !inCity
-                ? (isNearWreck() ? 'INSTALL NEXT TIRE' : 'RETURN TO WRECK')
-                : 'SALVAGE PART';
-        } else {
-            objective.textContent = inCity ? 'Bright City · elite infected nearby' : 'Car repaired · city route unlocked';
-            salvageButton.hidden = true;
-            rideButton.hidden = false;
-            rideButton.textContent = driving ? 'EXIT CAR' : 'ENTER CAR';
-            cityButton.hidden = false;
-            cityButton.textContent = inCity ? 'RETURN TO OUTPOST' : 'DRIVE TO BRIGHT CITY';
-        }
+        objective.textContent = inCity ? 'Bright City · elite infected nearby' : 'Car ready · explore the outpost';
+        rideButton.hidden = !driving && !isNearCar();
+        rideButton.textContent = driving ? 'EXIT CAR' : 'ENTER CAR';
+        cityButton.hidden = false;
+        cityButton.textContent = inCity ? 'RETURN TO OUTPOST' : 'TRAVEL TO BRIGHT CITY';
     }
 
     function addCarWheel(group, x, z) {
@@ -268,28 +235,6 @@
         windshield.position.set(0.68, 1.56, 0);
         group.add(windshield);
         return group;
-    }
-
-    function addPartMesh(part) {
-        const group = new THREE.Group();
-        const material = new THREE.MeshStandardMaterial({ color: part.color, emissive: part.color, emissiveIntensity: 0.45, roughness: 0.55 });
-        let mesh;
-        if (part.shape === 'wheel') {
-            mesh = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.18, 10, 20), material);
-            mesh.rotation.x = Math.PI / 2;
-        } else {
-            mesh = new THREE.Mesh(new THREE.BoxGeometry(part.shape === 'engine' ? 1.15 : 0.9, 0.65, 0.75), material);
-            if (part.shape === 'fuel') mesh.scale.set(0.75, 1.15, 0.7);
-        }
-        mesh.position.y = 0.72;
-        group.add(mesh);
-        const beacon = new THREE.PointLight(part.color, 1.2, 4);
-        beacon.position.y = 1.1;
-        group.add(beacon);
-        group.position.set(part.x, 0, part.z);
-        group.userData.salvagePart = part.name;
-        scene.add(group);
-        partObjects.push(group);
     }
 
     function addBuilding(group, x, z, width, depth, height, color, seed) {
@@ -435,93 +380,146 @@
         });
     }
 
+    function installDriveCameraHook() {
+        if (!renderer || renderer === hookedRenderer) return;
+        const renderScene = renderer.render;
+        renderer.render = function (...args) {
+            if (driving && driveCar && camera && typeof player !== 'undefined') {
+                const now = performance.now();
+                const delta = driveCameraLastTime ? Math.min((now - driveCameraLastTime) / 1000, 0.05) : 1 / 60;
+                driveCameraLastTime = now;
+                const yaw = typeof mouseX === 'number' ? mouseX : 0;
+                const followBlend = 1 - Math.exp(-delta * 7);
+                const cameraBlend = 1 - Math.exp(-delta * 4);
+
+                driveCameraPosition.set(
+                    player.x - Math.sin(yaw) * 2.2,
+                    0,
+                    player.z - Math.cos(yaw) * 2.2
+                );
+                driveCar.position.lerp(driveCameraPosition, followBlend);
+                const targetRotation = yaw + Math.PI / 2;
+                const rotationDelta = Math.atan2(
+                    Math.sin(targetRotation - driveCar.rotation.y),
+                    Math.cos(targetRotation - driveCar.rotation.y)
+                );
+                driveCar.rotation.y += rotationDelta * followBlend;
+
+                driveCameraPosition.set(
+                    driveCar.position.x - Math.sin(yaw) * 14,
+                    7.5,
+                    driveCar.position.z - Math.cos(yaw) * 14
+                );
+                camera.position.lerp(driveCameraPosition, cameraBlend);
+                driveCameraLookTarget.set(
+                    driveCar.position.x + Math.sin(yaw) * 3.5,
+                    1.1,
+                    driveCar.position.z + Math.cos(yaw) * 3.5
+                );
+                camera.lookAt(driveCameraLookTarget);
+            } else {
+                driveCameraLastTime = 0;
+            }
+            return renderScene.apply(this, args);
+        };
+        hookedRenderer = renderer;
+    }
+
     function installWorld() {
         if (typeof THREE === 'undefined' || typeof scene === 'undefined' || !scene || typeof player === 'undefined') return;
+        installDriveCameraHook();
         if (scene === worldScene) return;
+        driveCameraPosition = new THREE.Vector3();
+        driveCameraLookTarget = new THREE.Vector3();
         worldScene = scene;
-        collected.clear();
-        installedTires.clear();
-        partObjects = [];
-        wreckGroup = null;
         driveCar = null;
         cityGroup = null;
         inCity = false;
         driving = false;
         lastBoosted = new WeakSet();
         originalSpeed = null;
-        wreckGroup = makeCar(0x334155, 0);
-        wreckGroup.position.set(0, 0, 0);
-        wreckGroup.rotation.y = 0.35;
-        scene.add(wreckGroup);
-        // Make the wreck visibly damaged.
-        const debrisMaterial = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9 });
-        for (let i = 0; i < 5; i++) {
-            const debris = new THREE.Mesh(new THREE.BoxGeometry(0.9 + i * 0.12, 0.12, 0.55), debrisMaterial);
-            debris.position.set(-2.5 + i, 0.12, (i % 2 ? 1 : -1) * (1.3 + (i % 3) * 0.35));
-            debris.rotation.y = i * 0.7;
-            wreckGroup.add(debris);
-        }
-        PARTS.forEach(addPartMesh);
+        driveCar = makeCar(0x16a34a);
+        driveCar.position.set(4, 0, 0);
+        driveCar.rotation.y = Math.PI / 2;
+        scene.add(driveCar);
         buildCity();
         buildBiomes();
         savedAtmosphere = null;
-        lastPlayerPosition = null;
         paintObjective();
     }
 
-    function nearestPart() {
-        if (typeof player === 'undefined') return null;
-        let nearest = null;
-        let distance = 2.8;
-        partObjects.forEach(object => {
-            const name = object.userData.salvagePart;
-            if (collected.has(name)) return;
-            const current = Math.hypot(player.x - object.position.x, player.z - object.position.z);
-            if (current < distance) { distance = current; nearest = object; }
-        });
-        return nearest;
+    function isNearCar() {
+        return driving || (typeof player !== 'undefined' && driveCar
+            && Math.hypot(player.x - driveCar.position.x, player.z - driveCar.position.z) < 6);
     }
 
-    function isNearWreck() {
-        return typeof player !== 'undefined' && Math.hypot(player.x - wreckGroup.position.x, player.z - wreckGroup.position.z) < 4.2;
-    }
-
-    function interactWithCarAndParts() {
-        if (!isRepaired() && !inCity && isNearWreck() && carriedTire()) {
-            const tireName = carriedTire();
-            const tireIndex = TIRE_NAMES.indexOf(tireName);
-            installedTires.add(tireName);
-            const wheelPositions = [[-1.15, -1], [-1.15, 1], [1.15, -1], [1.15, 1]];
-            addCarWheel(wreckGroup, ...wheelPositions[tireIndex]);
-            nearby.textContent = `${tireName} installed · ${installedTires.size}/4 tires fitted.`;
-            if (isRepaired()) {
-                driveCar = makeCar(0x16a34a);
-                driveCar.position.set(player.x, 0, player.z);
-                scene.add(driveCar);
-                nearby.textContent = 'All parts fitted — the car is ready to drive!';
-            }
-            paintObjective();
-            return;
+    function setDrivingHud(active) {
+        if (typeof weaponMeshGroup !== 'undefined' && weaponMeshGroup) {
+            weaponMeshGroup.visible = !active;
         }
-
-        const part = nearestPart();
-        if (!part) return;
-        const name = part.userData.salvagePart;
-        collected.add(name);
-        scene.remove(part);
-        partObjects = partObjects.filter(item => item !== part);
-        nearby.textContent = `${name} recovered. Return to the wreck to install tires.`;
-        paintObjective();
+        const ammoBarText = document.getElementById('ammoBarText');
+        const ammoBarFill = document.getElementById('ammoBarFill');
+        const ammoCount = document.getElementById('ammoCurrent');
+        [ammoBarText && ammoBarText.parentElement, ammoBarFill && ammoBarFill.parentElement,
+            ammoCount && ammoCount.closest('.border-l')].filter(Boolean)
+            .forEach(element => { element.style.display = active ? 'none' : ''; });
+        document.querySelectorAll('[data-touch="fire"], [data-touch="ads"], [data-touch="reload"]')
+            .forEach(button => { button.style.display = active ? 'none' : ''; });
     }
+
+    // Remap the movement keys while driving so each direction responds naturally.
+    window.addEventListener('keydown', event => {
+        if (!driving) return;
+        const key = event.key.toLowerCase();
+        const mappedKey = { w: 's', s: 'w', a: 'd', d: 'a' }[key];
+        if (!mappedKey) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (typeof keys !== 'undefined') keys[mappedKey] = true;
+    }, true);
+    window.addEventListener('keyup', event => {
+        if (!driving) return;
+        const key = event.key.toLowerCase();
+        const mappedKey = { w: 's', s: 'w', a: 'd', d: 'a' }[key];
+        if (!mappedKey) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (typeof keys !== 'undefined') keys[mappedKey] = false;
+    }, true);
+
+    // Prevent weapon inputs from firing or reloading while the player is driving.
+    window.addEventListener('mousedown', event => {
+        if (!driving || ui.contains(event.target) || event.button !== 0
+            || (event.target.closest && event.target.closest('button, a, input, select, textarea, [role="button"]'))) return;
+        if (typeof isMouseDown !== 'undefined') isMouseDown = false;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+    }, true);
+    window.addEventListener('pointerdown', event => {
+        if (!driving || !event.target.closest) return;
+        if (!event.target.closest('[data-touch="fire"], [data-touch="ads"], [data-touch="reload"]')) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+    }, true);
+    window.addEventListener('keydown', event => {
+        if (driving && event.key.toLowerCase() === 'r') {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
 
     function switchMap(toCity) {
-        if (!cityGroup || !isRepaired()) return;
+        if (!cityGroup) return;
         inCity = toCity;
         if (!savedAtmosphere) savedAtmosphere = { background: scene.background, fog: scene.fog };
         cityGroup.visible = toCity;
         if (toCity) {
             player.x = 240;
             player.z = 240;
+            if (driveCar && !driving) {
+                driveCar.position.set(244, 0, 240);
+                driveCar.rotation.y = Math.PI / 2;
+            }
             if (typeof mouseX === 'number') mouseX = 0;
             scene.background = new THREE.Color(0x9bdcff);
             scene.fog = new THREE.Fog(0xc8edff, 100, 390);
@@ -531,6 +529,10 @@
         } else {
             player.x = 0;
             player.z = 0;
+            if (driveCar && !driving) {
+                driveCar.position.set(4, 0, 0);
+                driveCar.rotation.y = Math.PI / 2;
+            }
             scene.background = savedAtmosphere.background;
             scene.fog = savedAtmosphere.fog;
             if (typeof ambientLight !== 'undefined' && ambientLight) ambientLight.intensity = 0.8;
@@ -541,15 +543,21 @@
     }
 
     function setDriving(active) {
-        if (!isRepaired() || driving === active) return;
+        if (driving === active || (active && !isNearCar())) return;
         driving = active;
+        setDrivingHud(active);
         if (active) {
+            if (typeof isMouseDown !== 'undefined') isMouseDown = false;
+            if (typeof setADS === 'function') setADS(false);
             originalSpeed = player.speed;
-            player.speed = Math.max(player.speed, 0.34);
+            player.speed = Math.max(player.speed, 0.28);
+            driveCameraLastTime = 0;
             nearby.textContent = 'You are in the car. Use the movement controls to drive.';
         } else {
             if (originalSpeed !== null) player.speed = originalSpeed;
             originalSpeed = null;
+            if (typeof keys !== 'undefined') ['w', 'a', 's', 'd'].forEach(key => { keys[key] = false; });
+            if (typeof weaponMeshGroup !== 'undefined' && weaponMeshGroup) weaponMeshGroup.visible = true;
             nearby.textContent = 'You stepped out of the car.';
         }
         paintObjective();
@@ -560,7 +568,6 @@
     }
 
     function toggleCity() {
-        if (!isRepaired()) return;
         if (!inCity) {
             setDriving(true);
             switchMap(true);
@@ -750,20 +757,6 @@
             }
         };
 
-        if (wreckGroup && (!inCity || fullMap)) {
-            const x = mapX(wreckGroup.position.x), z = mapZ(wreckGroup.position.z);
-            ctx.fillStyle = '#f97316';
-            ctx.fillRect(x - 5, z - 5, 10, 10);
-            ctx.strokeStyle = '#fff7ed';
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(x - 5, z - 5, 10, 10);
-        }
-        partObjects.forEach(part => {
-            const name = part.userData.salvagePart || '';
-            const label = name.startsWith('TIRE') ? 'T' : name === 'ENGINE' ? 'E' : name === 'BATTERY' ? 'B' : 'F';
-            const color = name.startsWith('TIRE') ? '#fbbf24' : name === 'ENGINE' ? '#f97316' : name === 'BATTERY' ? '#22d3ee' : '#ef4444';
-            drawDot(part.position.x, part.position.z, color, fullMap ? 7 : 4.2, label);
-        });
         if (typeof zombies !== 'undefined' && Array.isArray(zombies)) {
             zombies.forEach(zombie => {
                 if (!zombie || typeof zombie !== 'object') return;
@@ -773,7 +766,7 @@
                 if (Number.isFinite(x) && Number.isFinite(z)) drawDot(x, z, '#fb3d4b', fullMap ? 5 : 2.8);
             });
         }
-        if (driveCar && (driving || fullMap)) drawDot(driveCar.position.x, driveCar.position.z, '#34d399', fullMap ? 5 : 4.2, 'C');
+        if (driveCar) drawDot(driveCar.position.x, driveCar.position.z, '#34d399', fullMap ? 5 : 4.2, 'C');
 
         ctx.save();
         ctx.translate(mapX(player.x), mapZ(player.z));
@@ -828,12 +821,10 @@
         }
     }, true);
 
-    salvageButton.addEventListener('click', interactWithCarAndParts);
     rideButton.addEventListener('click', toggleRide);
     cityButton.addEventListener('click', toggleCity);
     window.addEventListener('keydown', event => {
-        if (event.key.toLowerCase() === 'e' && gameState === 'PLAYING' && !ui.contains(event.target)) interactWithCarAndParts();
-        if (event.key.toLowerCase() === 'f' && gameState === 'PLAYING' && isRepaired() && !ui.contains(event.target)) toggleRide();
+        if (event.key.toLowerCase() === 'f' && gameState === 'PLAYING' && !ui.contains(event.target)) toggleRide();
     });
 
     window.setInterval(() => {
@@ -841,29 +832,369 @@
             installWorld();
             ui.hidden = typeof gameState === 'undefined' || gameState !== 'PLAYING';
             if (!worldScene || worldScene !== scene || gameState !== 'PLAYING') return;
-            const part = nearestPart();
-            const tireReadyToInstall = !inCity && isNearWreck() && Boolean(carriedTire());
-            salvageButton.disabled = !part && !tireReadyToInstall;
-            nearby.textContent = tireReadyToInstall
-                ? `At the wreck · install ${carriedTire()} here.`
-                : (part
-                    ? `Nearby: ${part.userData.salvagePart} · tap to collect or press E`
-                    : (isRepaired()
-                        ? (driving ? 'In car · move to drive. Press F or EXIT CAR to get out.' : 'Car ready · press ENTER CAR or F to drive.')
-                        : 'Find the glowing parts; tires must be fitted at the wreck.'));
-            if (driveCar && typeof player !== 'undefined') {
-                if (driving) {
-                    const yaw = typeof mouseX === 'number' ? mouseX : 0;
-                    driveCar.position.set(player.x - Math.sin(yaw) * 2.2, 0, player.z - Math.cos(yaw) * 2.2);
-                    driveCar.rotation.y = yaw;
-                } else if (!inCity) {
-                    driveCar.position.set(0, 0, 0);
-                }
-            }
+            if (typeof weaponMeshGroup !== 'undefined' && weaponMeshGroup) weaponMeshGroup.visible = !driving;
+            nearby.textContent = driving
+                ? 'Driving · use WASD or the movement controls. Press F to exit.'
+                : (isNearCar() ? 'Car nearby · press F or ENTER CAR to drive.' : 'Explore the outpost or head to the Bright City.');
             powerUpCityZombies();
             paintObjective();
         } catch (error) {
             // Keep the base game running if a scene refresh happens during a match transition.
         }
     }, 120);
+})();
+
+// Add responsive combat feedback to the existing HUD without changing core game logic.
+(() => {
+    const byId = id => document.getElementById(id);
+    const score = byId('scoreDisplay');
+    const health = byId('hpText');
+    const ammo = byId('ammoBarText');
+    const wave = byId('waveDisplay');
+    if (!score || !health || !ammo || !wave) return;
+
+    const feedback = document.createElement('div');
+    feedback.id = 'combatFeedback';
+    feedback.setAttribute('aria-live', 'polite');
+    feedback.setAttribute('aria-atomic', 'true');
+    document.body.appendChild(feedback);
+
+    let lastScore = Number.parseInt(score.textContent, 10) || 0;
+    let feedbackTimer;
+    let hitTimer;
+
+    function showHit() {
+        const crosshair = byId('crosshairContainer');
+        if (crosshair) {
+            crosshair.classList.add('combat-hit');
+            clearTimeout(hitTimer);
+            hitTimer = setTimeout(() => crosshair.classList.remove('combat-hit'), 180);
+        }
+        feedback.textContent = 'HOSTILE NEUTRALIZED';
+        feedback.classList.remove('combat-feedback-show');
+        void feedback.offsetWidth;
+        feedback.classList.add('combat-feedback-show');
+        clearTimeout(feedbackTimer);
+        feedbackTimer = setTimeout(() => feedback.classList.remove('combat-feedback-show'), 900);
+    }
+
+    function updateHealth() {
+        const values = health.textContent.match(/[\d.]+/g);
+        const current = values ? Number(values[0]) : NaN;
+        const maximum = values && values[1] ? Number(values[1]) : 100;
+        document.body.classList.toggle('combat-critical', Number.isFinite(current) && current > 0 && current / maximum <= 0.3);
+    }
+
+    function updateAmmo() {
+        const values = ammo.textContent.match(/[\d.]+/g);
+        const current = values ? Number(values[0]) : NaN;
+        const maximum = values && values[1] ? Number(values[1]) : 0;
+        document.body.classList.toggle('ammo-critical', Number.isFinite(current) && maximum > 0 && current / maximum <= 0.2);
+    }
+
+    new MutationObserver(() => {
+        const current = Number.parseInt(score.textContent, 10) || 0;
+        if (current > lastScore) showHit();
+        lastScore = current;
+    }).observe(score, { childList: true, characterData: true, subtree: true });
+    new MutationObserver(updateHealth).observe(health, { childList: true, characterData: true, subtree: true });
+    new MutationObserver(updateAmmo).observe(ammo, { childList: true, characterData: true, subtree: true });
+    new MutationObserver(() => {
+        const card = wave.closest('[class*="bg-amber-950/85"]');
+        if (!card) return;
+        card.classList.remove('wave-update');
+        void card.offsetWidth;
+        card.classList.add('wave-update');
+        setTimeout(() => card.classList.remove('wave-update'), 700);
+    }).observe(wave, { childList: true, characterData: true, subtree: true });
+
+    updateHealth();
+    updateAmmo();
+})();
+
+// Operation Last Light: multi-stage objectives turn the wave arena into a tactical mission.
+(() => {
+    const panel = document.getElementById('missionPanel');
+    const title = document.getElementById('missionTitle');
+    const objective = document.getElementById('missionObjective');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    if (!panel || !title || !objective || !scoreDisplay) return;
+
+    const actionButton = document.createElement('button');
+    actionButton.className = 'operation-action';
+    actionButton.type = 'button';
+    actionButton.textContent = 'HOLD TO INTERACT';
+    actionButton.hidden = true;
+    actionButton.setAttribute('aria-label', 'Interact with the mission objective');
+    const progressTrack = document.createElement('div');
+    progressTrack.className = 'operation-progress';
+    progressTrack.setAttribute('role', 'progressbar');
+    progressTrack.setAttribute('aria-label', 'Mission objective progress');
+    progressTrack.setAttribute('aria-valuemin', '0');
+    progressTrack.setAttribute('aria-valuemax', '100');
+    progressTrack.setAttribute('aria-valuenow', '0');
+    const progressFill = document.createElement('div');
+    progressFill.className = 'operation-progress-fill';
+    progressTrack.appendChild(progressFill);
+    panel.append(progressTrack, actionButton);
+
+    const interactionObjectives = [
+        { type: 'interact', name: 'FIELD RELAY', task: 'Restore the field relay', x: 46, z: 16, action: 'HOLD TO RESTORE RELAY' },
+        { type: 'interact', name: 'DISTRESS BEACON', task: 'Activate the distress beacon', x: -48, z: 18, action: 'HOLD TO ACTIVATE BEACON' },
+        { type: 'interact', name: 'SUPPLY CACHE', task: 'Secure the field supplies', x: 18, z: -48, action: 'HOLD TO SECURE SUPPLIES' }
+    ];
+    const killObjectives = [
+        { type: 'kills', name: 'HOSTILE SWEEP', task: 'Eliminate hostiles', kills: 8 },
+        { type: 'kills', name: 'THREAT REDUCTION', task: 'Clear the infected zone', kills: 12 },
+        { type: 'kills', name: 'HUNTER PATROL', task: 'Take down infected', kills: 10 }
+    ];
+    const defenseObjectives = [
+        { type: 'defend', name: 'OUTPOST DEFENSE', task: 'Defend the outpost perimeter', x: -42, z: -18, seconds: 20 },
+        { type: 'defend', name: 'RELAY DEFENSE', task: 'Hold the relay against the horde', x: 42, z: 40, seconds: 25 },
+        { type: 'defend', name: 'SAFE ZONE', task: 'Secure the survivor safe zone', x: -24, z: 48, seconds: 20 }
+    ];
+    const extractionObjectives = [
+        { type: 'extract', name: 'EXTRACTION', task: 'Hold the extraction zone', x: 0, z: 0, seconds: 20 },
+        { type: 'extract', name: 'EVACUATION', task: 'Secure the evacuation point', x: 54, z: -38, seconds: 25 },
+        { type: 'extract', name: 'FINAL RENDEZVOUS', task: 'Hold the rendezvous point', x: -54, z: -42, seconds: 22 }
+    ];
+    const operationNames = ['LAST LIGHT', 'BROKEN SIGNAL', 'DUST RUNNER', 'NIGHT WATCH', 'SAFE HARBOR'];
+    const pickRandom = options => options[Math.floor(Math.random() * options.length)];
+    let stages = [];
+    let operationTitle = 'OPERATION LAST LIGHT';
+    let stageIndex = 0;
+    let stageKills = 0;
+    let interactHeld = false;
+    let interactSeconds = 0;
+    let extractionSeconds = 0;
+    let defendSeconds = 0;
+    let lastTick = performance.now();
+    let activeScene = null;
+    let markers = [];
+    let markerSignature = '';
+    let previousGameState = 'START';
+    let completed = false;
+
+    function currentKills() {
+        return Number.parseInt(scoreDisplay.textContent, 10) || 0;
+    }
+
+    function makeMarker(stage) {
+        const group = new THREE.Group();
+        const color = stage.type === 'interact' ? 0x22d3ee : stage.type === 'defend' ? 0xfbbf24 : 0x34d399;
+        const material = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.65, roughness: 0.38 });
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.8, 0.18, 20), material);
+        base.position.y = 0.12;
+        group.add(base);
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.09, 8, 32), material);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = 0.28;
+        group.add(ring);
+        const beacon = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.08, 0.42, 5.5, 10, 1, true),
+            new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.24, depthWrite: false })
+        );
+        beacon.position.y = 3;
+        group.add(beacon);
+        group.position.set(stage.x, 0, stage.z);
+        group.userData.ring = ring;
+        group.userData.beacon = beacon;
+        group.userData.baseY = stage.name === 'SUPPLY CACHE' ? 0.12 : 0.12;
+        return group;
+    }
+
+    function syncMarkers() {
+        if (typeof scene === 'undefined' || !scene || typeof THREE === 'undefined') return;
+        const objectiveStages = stages.filter(stage => Number.isFinite(stage.x));
+        const signature = objectiveStages.map(stage => `${stage.type}:${stage.x}:${stage.z}`).join('|');
+        if (scene === activeScene && signature === markerSignature) return;
+        markers.forEach(marker => marker.parent && marker.parent.remove(marker));
+        activeScene = scene;
+        markerSignature = signature;
+        markers = objectiveStages.map(stage => {
+            const marker = makeMarker(stage);
+            scene.add(marker);
+            return marker;
+        });
+    }
+
+    function showNotice(message) {
+        const notice = document.getElementById('combatNotice');
+        if (!notice) return;
+        notice.textContent = message;
+        notice.dataset.kind = 'wave';
+        notice.classList.remove('combat-notice-show');
+        void notice.offsetWidth;
+        notice.classList.add('combat-notice-show');
+    }
+
+    function awardStage() {
+        if (typeof points === 'number') {
+            points += 200;
+            const display = document.getElementById('pointsDisplay');
+            const store = document.getElementById('storePoints');
+            if (display) display.textContent = points;
+            if (store) store.textContent = points;
+            if (typeof saveGameProgress === 'function') {
+                try { saveGameProgress(false); } catch (error) { /* A later autosave can retry. */ }
+            }
+        }
+        showNotice('OBJECTIVE SECURED  ·  +200 POINTS');
+    }
+
+    function advanceStage() {
+        awardStage();
+        stageIndex++;
+        interactSeconds = 0;
+        extractionSeconds = 0;
+        defendSeconds = 0;
+        if (stageIndex >= stages.length) {
+            completed = true;
+            showNotice('OPERATION COMPLETE  ·  EVACUATION SECURED');
+        }
+    }
+
+    function resetOperation() {
+        operationTitle = `OPERATION ${pickRandom(operationNames)}`;
+        stages = [
+            { ...pickRandom(interactionObjectives) },
+            { ...pickRandom(killObjectives) },
+            { ...pickRandom(defenseObjectives) },
+            { ...pickRandom(extractionObjectives) }
+        ];
+        stageIndex = 0;
+        stageKills = currentKills();
+        interactSeconds = 0;
+        extractionSeconds = 0;
+        defendSeconds = 0;
+        completed = false;
+        interactHeld = false;
+        markerSignature = '';
+        syncMarkers();
+    }
+
+    function setInteraction(held) {
+        interactHeld = held;
+    }
+
+    actionButton.addEventListener('pointerdown', event => {
+        if (!actionButton.disabled) {
+            event.preventDefault();
+            actionButton.setPointerCapture(event.pointerId);
+            setInteraction(true);
+        }
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => {
+        actionButton.addEventListener(type, () => setInteraction(false));
+    });
+    actionButton.addEventListener('click', event => {
+        event.preventDefault();
+        if (actionButton.disabled || stageIndex >= stages.length) return;
+        // Click activation also supports keyboard and assistive-technology users.
+        interactSeconds = 2.5;
+    });
+
+    window.addEventListener('keydown', event => {
+        if (event.repeat || event.key.toLowerCase() !== 'e' || gameState !== 'PLAYING') return;
+        if (event.target === actionButton) return;
+        event.preventDefault();
+        setInteraction(true);
+    }, true);
+    window.addEventListener('keyup', event => {
+        if (event.key.toLowerCase() === 'e') setInteraction(false);
+    }, true);
+    window.addEventListener('blur', () => setInteraction(false));
+
+    function updateOperation(now) {
+        const delta = Math.min((now - lastTick) / 1000, 0.1);
+        lastTick = now;
+        syncMarkers();
+
+        if (gameState === 'PLAYING' && (previousGameState === 'START' || previousGameState === 'GAMEOVER')) {
+            resetOperation();
+        }
+        previousGameState = gameState;
+
+        const live = gameState === 'PLAYING' && !completed && stageIndex < stages.length;
+        panel.classList.toggle('operation-complete', completed);
+        if (live) {
+            const stage = stages[stageIndex];
+            title.textContent = `${operationTitle}  ·  ${stageIndex + 1}/${stages.length}`;
+            const marker = markers.find(item => Math.hypot(item.position.x - stage.x, item.position.z - stage.z) < 0.01);
+            if (stage.kills) {
+                const count = Math.max(0, currentKills() - stageKills);
+                objective.textContent = `${stage.task}: ${Math.min(count, stage.kills)}/${stage.kills}`;
+                actionButton.hidden = true;
+                progressTrack.hidden = false;
+                progressFill.style.width = `${Math.min(100, count / stage.kills * 100)}%`;
+                progressTrack.setAttribute('aria-valuenow', String(Math.min(100, Math.round(count / stage.kills * 100))));
+                if (count >= stage.kills) advanceStage();
+            } else if (stage.type === 'extract') {
+                const distance = Math.hypot(player.x - stage.x, player.z - stage.z);
+                const inside = distance < 9;
+                const holdTime = stage.seconds || 20;
+                extractionSeconds = inside ? Math.min(holdTime, extractionSeconds + delta) : Math.max(0, extractionSeconds - delta * 2);
+                objective.textContent = inside
+                    ? `${stage.task}: ${Math.floor(extractionSeconds)}/${holdTime} sec — hold position!`
+                    : `${stage.task} (${Math.round(distance)}m away)`;
+                actionButton.hidden = true;
+                progressTrack.hidden = false;
+                progressFill.style.width = `${extractionSeconds / holdTime * 100}%`;
+                progressTrack.setAttribute('aria-valuenow', String(Math.round(extractionSeconds / holdTime * 100)));
+                if (extractionSeconds >= holdTime) advanceStage();
+            } else if (stage.type === 'defend') {
+                const distance = Math.hypot(player.x - stage.x, player.z - stage.z);
+                const inside = distance < 11;
+                const holdTime = stage.seconds || 20;
+                defendSeconds = inside ? Math.min(holdTime, defendSeconds + delta) : Math.max(0, defendSeconds - delta * 1.5);
+                objective.textContent = inside
+                    ? `${stage.task}: ${Math.floor(defendSeconds)}/${holdTime} sec`
+                    : `Return to defense zone (${Math.round(distance)}m)`;
+                actionButton.hidden = true;
+                progressTrack.hidden = false;
+                progressFill.style.width = `${defendSeconds / holdTime * 100}%`;
+                progressTrack.setAttribute('aria-valuenow', String(Math.round(defendSeconds / holdTime * 100)));
+                if (defendSeconds >= holdTime) advanceStage();
+            } else {
+                const distance = Math.hypot(player.x - stage.x, player.z - stage.z);
+                const inRange = distance < 7;
+                objective.textContent = inRange ? `${stage.task} · hold to interact` : `${stage.task} · ${Math.round(distance)}m away`;
+                actionButton.hidden = !inRange;
+                actionButton.disabled = !inRange;
+                actionButton.textContent = stage.action;
+                progressTrack.hidden = !inRange;
+                if (inRange && interactHeld) interactSeconds = Math.min(2.5, interactSeconds + delta);
+                else if (!interactHeld) interactSeconds = Math.max(0, interactSeconds - delta * 1.8);
+                progressFill.style.width = `${interactSeconds / 2.5 * 100}%`;
+                progressTrack.setAttribute('aria-valuenow', String(Math.round(interactSeconds / 2.5 * 100)));
+                if (interactSeconds >= 2.5) {
+                    stageKills = currentKills();
+                    advanceStage();
+                }
+            }
+        } else if (completed) {
+            title.textContent = `${operationTitle}  ·  COMPLETE`;
+            objective.textContent = 'Evacuation secured. The outpost is clear.';
+            actionButton.hidden = true;
+            progressTrack.hidden = true;
+        } else {
+            actionButton.hidden = true;
+        }
+
+        markers.forEach((marker, index) => {
+            const stage = stages.filter(item => Number.isFinite(item.x))[index];
+            const active = live && stage === stages[stageIndex];
+            marker.visible = Boolean(active);
+            if (active) {
+                marker.userData.ring.rotation.z += delta * 1.4;
+                marker.userData.beacon.material.opacity = 0.17 + (Math.sin(now / 260) + 1) * 0.09;
+            }
+        });
+    }
+
+    window.setInterval(() => {
+        try {
+            if (typeof player !== 'undefined' && typeof gameState !== 'undefined') updateOperation(performance.now());
+        } catch (error) { /* The base game remains playable if a scene is being rebuilt. */ }
+    }, 80);
 })();
